@@ -8,7 +8,7 @@ import pandas as pd
 
 from src.utils.datetime_utils import parse_italian_date
 from src.utils.pandas_utils import reformat_csv
-from src.utils.pdf_utils import save_PDF, fix_pdf, pages_to_csv
+from src.utils.pdf_utils import save_PDF, fix_pdf
 
 base_path = "data/downloads/"
 
@@ -20,15 +20,16 @@ async def create_csv_by_pdf(link):
 
     # Compose paths
     pdf_path = base_path + filename + ".pdf"
-    fixed_folder = base_path + filename
-    csv_path = base_path + filename + "_csv"
+    fixed_path = base_path + filename + "_fixed.pdf"
+    csv_path = base_path + filename + ".csv"
 
     # Download PDF
     await save_PDF(link, pdf_path)
-    fix_pdf(pdf_path, fixed_folder, remove_original=False)
+    fix_pdf(pdf_path, fixed_path, remove_original=False)
 
     # Convert PDFs to CSV
-    pages_to_csv(fixed_folder, csv_path)
+    tables = camelot.read_pdf(fixed_path)
+    tables.export(csv_path)
     #os.remove(rotated_path)
 
     # Open csv file

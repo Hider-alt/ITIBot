@@ -3,5 +3,6 @@ python-dotenv
 requests
 beautifulsoup4
 PyPDF2
-tabula-py
+camelot-py[cv]==0.10.1
 pandas
+fitz

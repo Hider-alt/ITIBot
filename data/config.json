@@ -1,3 +1,5 @@
 {
-    "rotation_angle": 270
+    "rotation_angle": 270,
+    "start_coords": [640, 745],
+    "end_coords": [640, -180]
 }

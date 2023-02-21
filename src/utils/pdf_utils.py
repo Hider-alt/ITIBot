@@ -1,12 +1,14 @@
 import json
 import os
-from asyncio import sleep
 
-import PyPDF2 as PyPDF2
+import PyPDF2
 import camelot
 import requests
+
+from asyncio import sleep
 from bs4 import BeautifulSoup
 from requests import Timeout
+import fitz
 
 
 def get_pdf_links() -> list[str]:
@@ -54,52 +56,48 @@ async def save_PDF(url: str, path: str) -> None:
         f.write(pdf.content)
 
 
-def fix_pdf(pdf_path: str, output_folder: str, remove_original: bool = True) -> None:
+def fix_pdf(pdf_path: str, output_path: str, remove_original: bool = True) -> None:
     """
     It takes a PDF file, rotates each page by a number of degrees that is set in data/config.json,
     and saves the result to a new PDF file
 
     :param pdf_path: The path to the PDF file you want to rotate
-    :param output_folder: The path to the output file
+    :param output_path: The path to the output file
     :param remove_original: If True, the original PDF will be deleted, defaults to True (optional)
     """
     # Open config.json
     with open('data/config.json', 'r') as f:
         config = json.load(f)
 
+    temp_file_path = output_path[:-4] + '_temp.pdf'
+
     with open(pdf_path, 'rb') as pdf_file:
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        # Rotate pages
+        pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+        pdf_writer = PyPDF2.PdfFileWriter()
 
-        # Create output folder if it doesn't exist
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
+        for page in range(pdf_reader.numPages):
+            page = pdf_reader.getPage(page)
+            page.rotateClockwise(config['rotation_angle'])
+            pdf_writer.addPage(page)
 
-        # Split pages in different files
-        for num_page in range(len(pdf_reader.pages)):
-            page = pdf_reader.pages[num_page]
-            page.rotate(config['rotation_angle'])
-            pdf_writer = PyPDF2.PdfWriter()
-            pdf_writer.add_page(page)
-            with open(output_folder + f"/{num_page}.pdf", 'wb') as f:
-                pdf_writer.write(f)
+        # Save the rotated pages to a new PDF file
+        with open(temp_file_path, 'wb') as new_pdf:
+            pdf_writer.write(new_pdf)
+
+    # Draw separator line
+    with fitz.open(temp_file_path) as pdf:
+        for page in pdf:
+            page.draw_line(
+                (config['start_coords'][0], config['start_coords'][1]), (config['end_coords'][0], config['end_coords'][1]),
+                color=(0, 0, 0),
+                width=2
+            )
+
+        pdf.save(output_path)
+
+    # Delete temporary file
+    os.remove(temp_file_path)
 
     if remove_original:
         os.remove(pdf_path)
-
-
-def pages_to_csv(pages_path, output_folder):
-    """
-    It takes a folder containing PDF files, and saves the text of each page to a CSV file
-
-    :param pages_path: The path to the folder containing the PDF files
-    :param output_folder: The path to the output folder
-    """
-
-    if not os.path.exists(output_folder):
-        os.mkdir(output_folder)
-
-    for file in os.listdir(pages_path):
-        if file.endswith(".pdf"):
-            tables = camelot.read_pdf(pages_path + "/" + file)
-
-            tables[0].to_csv(output_folder + "/" + file[:-4] + ".csv")

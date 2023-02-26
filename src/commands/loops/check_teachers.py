@@ -22,6 +22,4 @@ async def check_variations(bot):
 
     merged_embeds = merge_embeds(missing_embeds, returned_embeds)
 
-
-    await send_embeds(bot, bot.log_channel, missing_embeds)
-    await send_embeds(bot, bot.log_channel, returned_embeds)
+    await send_embeds(bot, bot.log_channel, merged_embeds)

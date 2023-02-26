@@ -7,12 +7,12 @@ from discord.utils import format_dt
 from src.utils.datetime_utils import is_before_tomorrow
 
 
-def generate_embed(variations: list[dict[dict]], missing: bool = True) -> list[Embed]:
+def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
     """
     It generates an embed with the missing teachers.
 
+    :param variations: The teachers to generate the embeds for
     :param missing: If the teachers are missing or returned
-    :param variations: The missing teachers
     :return: A list of embeds
     """
     # Create an embed for each date of the missing teachers
@@ -55,9 +55,9 @@ def generate_embeds(variations: list[dict], missing: bool = True) -> dict[list[E
 
     # Generate embeds
     if missing:
-        return {class_name: [generate_embed(teachers)] for class_name, teachers in variations}
+        return {class_name: generate_embed(teachers) for class_name, teachers in variations}
     else:
-        return {class_name: [generate_embed(teachers, missing=False)] for class_name, teachers in variations}
+        return {class_name: generate_embed(teachers, missing=False) for class_name, teachers in variations}
 
 
 def merge_embeds(*embeds: dict[list[Embed]]) -> dict[list[Embed]]:
@@ -67,14 +67,13 @@ def merge_embeds(*embeds: dict[list[Embed]]) -> dict[list[Embed]]:
     :param embeds: The embeds to merge
     :return: A dictionary with the merged embeds
     """
-
     merged_embeds = {}
     for embed in embeds:
-        for class_name, embeds in embed.items():
+        for class_name, class_embeds in embed.items():
             if class_name not in merged_embeds:
-                merged_embeds[class_name] = embeds
+                merged_embeds[class_name] = class_embeds
             else:
-                merged_embeds[class_name].extend(embeds)
+                merged_embeds[class_name].extend(class_embeds)
 
     return merged_embeds
 
@@ -94,11 +93,10 @@ async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:
     if owner is None:
         owner = await bot.fetch_user(guild.owner_id)
 
-
-    for class_name, list_embeds in embeds_dict.items():
+    for class_name, embeds in embeds_dict.items():
         role = utils.get(guild.roles, name=class_name)
-        for embeds in list_embeds:
-            embed = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
-            m = await channel.send(content=role.mention, embeds=embed)
-            await m.add_reaction("\U0001f389")
-            await m.add_reaction("\U0001f62d")
+
+        embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
+        m = await channel.send(content=role.mention, embeds=embeds)
+        await m.add_reaction("\U0001f389")
+        await m.add_reaction("\U0001f62d")

@@ -16,7 +16,6 @@ class Admin(Cog):
     @app_commands.checks.has_permissions(administrator=True)
     async def refresh(self, itr):
         await itr.response.send_message("Refresh in corso...", ephemeral=True)
-        await itr.response.defer()
 
         await check_variations(itr.client)
 

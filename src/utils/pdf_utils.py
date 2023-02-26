@@ -1,17 +1,16 @@
-import json
+import csv
 import os
+import re
 
 import PyPDF2
-import camelot
+import pdfplumber
 import requests
 
 from asyncio import sleep
 from bs4 import BeautifulSoup
 from requests import Timeout
-import fitz
 
-
-def get_pdf_links() -> list[str]:
+def get_variations_links() -> list[str]:
     """
     It gets the links of the pdf files from the ITI page
 
@@ -26,8 +25,7 @@ def get_pdf_links() -> list[str]:
 
     # Filter only pdf links
     links = [link.get('href') for link in a]
-    print(links)
-    return [link for link in links if link.startswith('https://www.ispascalcomandini.it/wp-content/uploads/2017/09')]
+    return [link for link in links if link.startswith('https://www.ispascalcomandini.it/wp-content/uploads/2017/09') and not 'parte2' in link]
 
 
 async def save_PDF(url: str, path: str) -> None:
@@ -56,48 +54,97 @@ async def save_PDF(url: str, path: str) -> None:
         f.write(pdf.content)
 
 
-def fix_pdf(pdf_path: str, output_path: str, remove_original: bool = True) -> None:
+def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
     """
-    It takes a PDF file, rotates each page by a number of degrees that is set in data/config.json,
-    and saves the result to a new PDF file
+    It takes a PDF file, converts it to a CSV file, and saves it to a given path
+
+    :param pdf_path: The path to the PDF file you want to convert
+    :param output_path: The path to the output file
+    :param delete_original: If True, it deletes the original PDF file
+    :return: True if the conversion was successful, False otherwise
+    """
+
+    list_pdf = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            table = page.extract_table()
+            list_pdf.extend(table)
+
+    for i, row in enumerate(list_pdf):
+        if i == 0:
+            # Headers
+            # [['Ora Classe Doc.Assente Sost.1 Sost.2 Pagam. Note Firma', None, None, None, None, None, None, None] -> ['Ora', 'Classe', 'Doc.Assente', 'Sost.1', 'Sost.2', 'Pagam.', 'Note', 'Firma']
+            list_pdf[i] = list_pdf[i][0].split(' ')
+            if list_pdf[i][0] != 'Ora':
+                return False
+
+            list_pdf[i].remove('Firma')
+
+            # Remove all None elements
+            list_pdf[i] = [x for x in list_pdf[i] if x]
+            list_pdf[i].insert(2, 'Aula')
+
+            continue
+
+        if len(row) == 0:
+            continue
+
+        if row[0] == 'Ora':
+            # Repeating header
+            list_pdf[i] = []
+            continue
+
+        if 'ISS "Pascal Comandini" - Cesena' in row[0]:
+            # Remove the row and the next one (if it exists)
+            list_pdf[i] = []
+            if i + 1 < len(list_pdf):
+                list_pdf[i + 1] = []
+            continue
+
+        # Remove 'Firma' element
+        list_pdf[i].pop(-1)
+
+        # Split second element in 2nd and 3rd element (e.g. '3A(LT)' -> '3A', 'LT'; '5I\n(PALESTRAPASCAL)' -> '5I', 'PALESTRAPASCAL')
+        text = str(row[1])  # Copy the string
+        list_pdf[i][1] = text.split('\n')[0].split('(')[0]
+        classroom = re.findall(r'\((.*?)\)', text)[0]
+        list_pdf[i].insert(2, classroom)
+
+    list_pdf = [row for row in list_pdf if len(row) != 0]
+
+    # Write list_pdf to CSV
+    with open(output_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(list_pdf)
+
+    if delete_original:
+        os.remove(pdf_path)
+
+    return True
+
+
+def fix_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
+    """
+    It takes a PDF file, rotates each page and draws separator lines, and saves the result to a new PDF file
 
     :param pdf_path: The path to the PDF file you want to rotate
     :param output_path: The path to the output file
-    :param remove_original: If True, the original PDF will be deleted, defaults to True (optional)
+    :param delete_original: If True, the original PDF will be deleted, defaults to True (optional)
+    :param rotation_degrees: The degrees to rotate the pages, defaults to 270
     """
-    # Open config.json
-    with open('data/config.json', 'r') as f:
-        config = json.load(f)
-
-    temp_file_path = output_path[:-4] + '_temp.pdf'
-
     with open(pdf_path, 'rb') as pdf_file:
         # Rotate pages
-        pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+        pdf_reader = PyPDF2.PdfFileReader(pdf_file, strict=False)
         pdf_writer = PyPDF2.PdfFileWriter()
 
         for page in range(pdf_reader.numPages):
             page = pdf_reader.getPage(page)
-            page.rotateClockwise(config['rotation_angle'])
+            page.rotateClockwise(rotation_degrees)
             pdf_writer.addPage(page)
 
         # Save the rotated pages to a new PDF file
-        with open(temp_file_path, 'wb') as new_pdf:
+        with open(output_path, 'wb') as new_pdf:
             pdf_writer.write(new_pdf)
 
-    # Draw separator line
-    with fitz.open(temp_file_path) as pdf:
-        for page in pdf:
-            page.draw_line(
-                (config['start_coords'][0], config['start_coords'][1]), (config['end_coords'][0], config['end_coords'][1]),
-                color=(0, 0, 0),
-                width=2
-            )
-
-        pdf.save(output_path)
-
-    # Delete temporary file
-    os.remove(temp_file_path)
-
-    if remove_original:
+    if delete_original:
         os.remove(pdf_path)

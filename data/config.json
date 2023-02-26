@@ -1,5 +1,18 @@
 {
-    "rotation_angle": 270,
-    "start_coords": [640, 745],
-    "end_coords": [640, -180]
+    "270": {
+        "start_coord": [640, 745],
+        "end_coord": [640, -180],
+
+        "columns_coords_x": [745, 685, 581, 447, 324, 215, 177, -5, -180],
+        "columns_start_y": 658,
+        "columns_end_y": 160
+    },
+    "90": {
+        "start_coord": [637, 745],
+        "end_coord": [637, -165],
+
+        "columns_coords_x": [-185, -124, -20, 110, 236, 345, 383, 555, 730],
+        "columns_start_y": 640,
+        "columns_end_y": 150
+    }
 }

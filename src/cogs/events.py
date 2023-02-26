@@ -15,7 +15,7 @@ class Events(Cog):
         self.bot = bot
         self.check_variations_loop.start()
 
-    @tasks.loop(hours=1, reconnect=False)
+    @tasks.loop(minutes=15)
     async def check_variations_loop(self):
         print(f"[{datetime.now()}] Checking Variations")
         await check_variations(self.bot)

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 import os
 from dotenv import load_dotenv
@@ -16,16 +17,18 @@ class MyBot(Bot):
     def __init__(self, **options):
         super().__init__(**options)
         self.school_guild = None
-        self.guild = Object(id=981621881696313354)
-        self.log_channel = 981622284471111732
+        self.guild = Object(id=1077747577384075354)
+        self.log_channel = 1077747715775139851
 
     async def setup_hook(self):
+        self.log_channel = await self.fetch_channel(self.log_channel)
+        self.school_guild = await self.fetch_guild(self.guild.id)
+        print("Guild: " + str(self.school_guild))
+        print("Log channel: " + str(self.log_channel))
+
         for file in os.listdir("src//cogs"):
             if file.endswith(".py"):
                 await self.load_extension('src.cogs.' + file[:-3])
-
-        self.log_channel = await self.fetch_channel(self.log_channel)
-        self.school_guild = await self.fetch_guild(self.guild.id)
 
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
@@ -44,6 +47,7 @@ class MyBot(Bot):
 async def main():
     async with bot:
         try:
+            logging.basicConfig(level=logging.WARNING)
             await bot.start(os.environ['DISCORD'])
         except LoginFailure as e:
             print("\n\nERROR: Discord Token not valid (" + str(e) + ")\n\n")

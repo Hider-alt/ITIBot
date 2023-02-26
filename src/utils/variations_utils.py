@@ -1,14 +1,11 @@
 import datetime
 import json
 import os
-#import tabula
-import camelot
 
 import pandas as pd
 
 from src.utils.datetime_utils import parse_italian_date
-from src.utils.pandas_utils import reformat_csv
-from src.utils.pdf_utils import save_PDF, fix_pdf
+from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv
 
 base_path = "data/downloads/"
 
@@ -23,46 +20,18 @@ async def create_csv_by_pdf(link):
     fixed_path = base_path + filename + "_fixed.pdf"
     csv_path = base_path + filename + ".csv"
 
-    # Download PDF
+    # Download PDF & fix it
     await save_PDF(link, pdf_path)
-    fix_pdf(pdf_path, fixed_path, remove_original=False)
+    fix_pdf(pdf_path, fixed_path, rotation_degrees=90, delete_original=False)
 
-    # Convert PDFs to CSV
-    tables = camelot.read_pdf(fixed_path)
-    tables.export(csv_path)
-    #os.remove(rotated_path)
-
-    # Open csv file
-    csv = pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')
-
-    # Remove empty columns
-    csv = csv.dropna(axis='columns', how='all')
-    print(csv)
-
-    # Rename headers, because sometimes they aren't split correctly
-    csv.columns = ['Ora', 'Classe', 'Doc.Assente', 'Sostituto 1', 'Sostituto 2', 'Pagam.', 'Note']
-    # Remove useless columns
-    #df = csv.drop(columns=['Ora', 'Pagam.', 'Firma'])
-    df = csv
-
-    # Add column after 'Classe' column named 'Aula', with value the 'Classe' one but only thing after ( and before ). Example: 5H(L5) -> L5
-    df.insert(2, 'Aula', df['Classe'].str.split(r'\((.*?)\)', expand=True)[1].values)
-
-    # Remove parenthesis from 'Classe' column. Example: 5H(L5) -> 5H
-    df['Classe'] = df['Classe'].str.replace(r'\(.*?\)', '')
-
-    # Rename second column
-    #df.rename(columns={df.columns[0]: "Ora"}, inplace=True)
-
-    # Create new csv file (reformatted)
-    #reformat_csv(base_path + filename + "_edited.csv", df)
-
-    # Save new csv file
-    df.to_csv(base_path + filename + "_edited.csv", index=False, encoding='windows-1252')
-
-    # Remove old csv file
-    os.remove(csv_path)
-    os.rename(base_path + filename + "_edited.csv", csv_path)
+    # Convert PDF to CSV
+    ok = pdf_to_csv(fixed_path, csv_path)
+    if not ok:
+        # Retry with a different rotation
+        fix_pdf(pdf_path, fixed_path)
+        ok = pdf_to_csv(fixed_path, csv_path)
+        if not ok:
+            raise Exception("Error while converting PDF to CSV")
 
     return csv_path
 
@@ -71,17 +40,24 @@ def update_teachers_json(csv_path):
     date = parse_italian_date(csv_path[:-4])
     csv = pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')
 
-    variations = create_variations_dict(csv, date)
+    # Replace NaN with empty string
+    csv = csv.fillna('')
 
-    with open('data/new.json', 'w') as f:
+    variations: dict = create_variations_dict(csv, date)
+
+    with open('data/new.json', 'r') as f:
+        # Adds the new variations to the json file
+
         current_variations = json.load(f)
         current_variations.update(variations)
+
+    with open('data/new.json', 'w') as f:
         json.dump(current_variations, f, indent=4)
 
 
 def create_variations_dict(df, date: datetime) -> dict:
     """
-    It creates a dictionary with the list of variations.
+    It creates a dictionary (json) with the list of variations (csv).
 
     :param df: The dataframe containing the variations
     :param date: The date of the variations
@@ -98,8 +74,8 @@ def create_variations_dict(df, date: datetime) -> dict:
             "hour": row['Ora'],
             "class": row['Classe'],
             "classroom": row['Aula'],
-            "substitute_1": row['Sostituto 1'],
-            "substitute_2": row['Sostituto 2'],
+            "substitute_1": row['Sost.1'],
+            "substitute_2": row['Sost.2'],
             "notes": row['Note']
         })
 
@@ -123,12 +99,19 @@ def get_classes(variations: list) -> list:
     return classes
 
 
-def clear_json(path):
-    with open(path, 'w') as f:
+def refresh_json(new_path, old_path):
+    with open(new_path, 'r') as f:
+        new = json.load(f)
+
+    with open(old_path, 'w') as f:
+        json.dump(new, f, indent=4)
+
+    os.remove(new_path)
+    with open(new_path, 'w+') as f:
         json.dump({}, f, indent=4)
 
 
-def compare_json(old_path: str, new_path: str) -> tuple[list, list]:
+def compare_variations(new_path: str, old_path: str) -> tuple[list, list]:
     """
     It compares the old and the new variations json files and returns the differences.
 
@@ -157,8 +140,14 @@ def compare_json(old_path: str, new_path: str) -> tuple[list, list]:
                 if variation not in old[date]:
                     # Add variation
                     teachers_missing.append(variation)
-                else:
-                    # Teacher is not missing anymore
+
+    for date, variations in old.items():
+        if date not in new.keys():
+            continue
+        else:
+            for variation in variations:
+                if variation not in new[date]:
+                    # Remove variation
                     teachers_returned.append(variation)
 
     return teachers_missing, teachers_returned

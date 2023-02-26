@@ -4,29 +4,26 @@ from itertools import groupby
 from discord import Embed, Color, utils
 from discord.utils import format_dt
 
-from src.utils.datetime_utils import is_before_tomorrow
-
 
 def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
     """
-    It generates an embed with the missing teachers.
+    It generates a list of embeds with the missing/returned teachers.
 
     :param variations: The teachers to generate the embeds for
-    :param missing: If the teachers are missing or returned
+    :param missing: Whether the teachers are missing or returned
     :return: A list of embeds
     """
-    # Create an embed for each date of the missing teachers
+    # Create embed grouped by date
     embeds = []
 
     date_group = sorted(variations, key=lambda x: x['date'])
     for date, variations in groupby(date_group, key=lambda x: x['date']):
         date = datetime.datetime.strptime(date, '%d-%m-%Y')
-        if is_before_tomorrow(date):
-            title = ":tada: Nuove variazioni per domani:" if missing else ":frowning2: Rimosse le seguenti variazioni di domani:"
-        else:
-            title = f":tada: Nuove variazioni per {format_dt(date, 'D')}:" if missing else f":frowning2: Variazioni rimosse per il {format_dt(date, 'D')}:"
+
+        title = f":tada: Nuove variazioni per {format_dt(date, 'D')}:" if missing else f":frowning2: Variazioni rimosse per il {format_dt(date, 'D')}:"
 
         embed = Embed(title=title, color=Color.green() if missing else Color.red())
+
         embed.add_field(name="\u200b", value="**Ora**")
         embed.add_field(name="\u200b", value="**Docente assente**")
         embed.add_field(name="\u200b", value="**Note**")

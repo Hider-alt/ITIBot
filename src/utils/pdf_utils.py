@@ -10,6 +10,7 @@ from asyncio import sleep
 from bs4 import BeautifulSoup
 from requests import Timeout
 
+
 def get_variations_links() -> list[str]:
     """
     It gets the links of the pdf files from the ITI page
@@ -125,7 +126,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
 
 def fix_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
     """
-    It takes a PDF file, rotates each page and draws separator lines, and saves the result to a new PDF file
+    It takes a PDF file, rotates each page and saves the result to a new PDF file
 
     :param pdf_path: The path to the PDF file you want to rotate
     :param output_path: The path to the output file

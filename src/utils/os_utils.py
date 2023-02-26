@@ -4,9 +4,9 @@ import shutil
 
 def clear_folder(folder: str) -> None:
     """
-    It removes all files in a given folder
+    It removes all files/folders in a given folder
 
-    :param folder: the folder where the images are stored
+    :param folder: the folder to clear
     """
     for f in os.listdir(folder):
         if os.path.isdir(folder + f):

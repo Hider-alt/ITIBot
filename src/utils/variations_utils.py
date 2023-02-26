@@ -10,7 +10,14 @@ from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv
 base_path = "data/downloads/"
 
 
-async def create_csv_by_pdf(link):
+async def create_csv_by_pdf(link) -> str:
+    """
+    It takes a link to a PDF file, downloads it, fixes it, converts it to a CSV file, and saves it to a given path
+
+    :param link: The link to the PDF file
+    :return: The path to the CSV file
+    """
+
     # Get last part of link
     filename = link.split('/')[-1][:-4].lower()
     filename = filename[len('variazioni-orario-'):(filename.index(datetime.datetime.strftime(datetime.datetime.now(), '%Y')) + 4)]  # 4 -> Year digits
@@ -37,6 +44,12 @@ async def create_csv_by_pdf(link):
 
 
 def update_teachers_json(csv_path):
+    """
+    It updates the new.json file with the new teachers from the given CSV file.
+
+    :param csv_path: The path to the CSV file
+    """
+
     date = parse_italian_date(csv_path[:-4])
     csv = pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')
 
@@ -57,11 +70,10 @@ def update_teachers_json(csv_path):
 
 def create_variations_dict(df, date: datetime) -> dict:
     """
-    It creates a dictionary (json) with the list of variations (csv).
+    It creates a dictionary with the variations from the given CSV file.
 
-    :param df: The dataframe containing the variations
+    :param df: The CSV file
     :param date: The date of the variations
-    :return: The dictionary with the variations by date
     """
 
     date = datetime.datetime.strftime(date, '%d-%m-%Y')
@@ -82,24 +94,14 @@ def create_variations_dict(df, date: datetime) -> dict:
     return daily_variations
 
 
-def get_classes(variations: list) -> list:
-    """
-    It gets the classes from the variations dictionary.
-
-    :param variations: The variations dictionary
-    :return: A list of classes
-    """
-
-    classes = []
-
-    for variation in variations:
-        if variation['class'] not in classes:
-            classes.append(variation['class'])
-
-    return classes
-
-
 def refresh_json(new_path, old_path):
+    """
+    It refreshes the old.json file with the new.json file and then it clears the new.json file.
+
+    :param new_path: new.json path
+    :param old_path: old.json path
+    """
+
     with open(new_path, 'r') as f:
         new = json.load(f)
 

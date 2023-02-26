@@ -31,14 +31,3 @@ def parse_italian_date(date: str) -> datetime:
     date = datetime.datetime(int(year), month, int(day))
 
     return date
-
-
-def is_before_tomorrow(date: datetime) -> bool:
-    """
-    It checks if the date is before tomorrow.
-
-    :param date: The date to check
-    :return: True if the date is before tomorrow, False otherwise
-    """
-
-    return date < datetime.datetime.now() + datetime.timedelta(days=1)

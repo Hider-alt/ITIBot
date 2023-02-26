@@ -2,21 +2,21 @@
     "2017-06-01": [
         {
             "date": "2017-06-01",
-            "teacher": "Morena Gallinucci",
+            "teacher": "Mario Rossi",
             "hour": 1,
             "class": "4H",
             "classroom": "P1",
-            "substitute_1": "Zampiga Monica",
+            "substitute_1": "Maria",
             "substitute_2": "-",
             "notes": "Disposizione classe in orario in PCTO"
         },
         {
             "date": "2017-06-02",
-            "teacher": "Zampiga Monica",
+            "teacher": "Maria",
             "hour": 3,
             "class": "3H",
             "classroom": "P10",
-            "substitute_1": "Morena Gallinucci",
+            "substitute_1": "Luigi",
             "substitute_2": "-",
             "notes": "Disposizione classe in orario in PCTO"
         }

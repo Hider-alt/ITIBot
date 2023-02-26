@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import sys
 import os
@@ -7,6 +8,7 @@ from dotenv import load_dotenv
 from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
 
+from src.commands.refresh_roles import SelectRoleView
 
 load_dotenv()
 
@@ -19,12 +21,17 @@ class MyBot(Bot):
         self.school_guild = None
         self.guild = Object(id=1077747577384075354)
         self.log_channel = 1077747715775139851
+        self.select_channel = 1079407521409794178
 
     async def setup_hook(self):
         self.log_channel = await self.fetch_channel(self.log_channel)
         self.school_guild = await self.fetch_guild(self.guild.id)
-        print("Guild: " + str(self.school_guild))
-        print("Log channel: " + str(self.log_channel))
+        self.select_channel = await self.fetch_channel(self.select_channel)
+
+        with open("data/config.json", "r") as f:
+            config = json.load(f)
+
+        self.add_view(SelectRoleView(config["classes"]))
 
         for file in os.listdir("src//cogs"):
             if file.endswith(".py"):

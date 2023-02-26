@@ -22,18 +22,18 @@ def generate_embed(variations: list[dict[dict]], missing: bool = True) -> list[E
     for date, variations in groupby(date_group, key=lambda x: x['date']):
         date = datetime.datetime.strptime(date, '%d-%m-%Y')
         if is_before_tomorrow(date):
-            title = ":tada: Domani mancheranno i seguenti prof:" if missing else ":frowning2: Le seguenti variazioni orario di domani, sono state cancellate:"
+            title = ":tada: Nuove variazioni per domani:" if missing else ":frowning2: Rimosse le seguenti variazioni di domani:"
         else:
-            title = f":tada: I seguenti prof. mancheranno {format_dt(date, 'D')}:" if missing else f":frowning2: Le seguenti variazioni orario di {format_dt(date, 'D')}, sono state cancellate:"
+            title = f":tada: Nuove variazioni per {format_dt(date, 'D')}:" if missing else f":frowning2: Variazioni rimosse per il {format_dt(date, 'D')}:"
 
         embed = Embed(title=title, color=Color.green() if missing else Color.red())
         embed.add_field(name="\u200b", value="**Ora**")
         embed.add_field(name="\u200b", value="**Docente assente**")
         embed.add_field(name="\u200b", value="**Note**")
         for teacher in variations:
-            embed.add_field(name=teacher['hour'], value="\u200b")
+            embed.add_field(name=teacher['hour'], value=f"({teacher['classroom']})")
             embed.add_field(name=teacher['teacher'], value="\u200b")
-            embed.add_field(name=teacher['notes'], value="\u200b")
+            embed.add_field(name=teacher['notes'], value=f"(Sostituto: {teacher['substitute_1']})" if teacher['substitute_1'] != "-" else "\u200b")
 
         embeds.append(embed)
 
@@ -58,6 +58,25 @@ def generate_embeds(variations: list[dict], missing: bool = True) -> dict[list[E
         return {class_name: [generate_embed(teachers)] for class_name, teachers in variations}
     else:
         return {class_name: [generate_embed(teachers, missing=False)] for class_name, teachers in variations}
+
+
+def merge_embeds(*embeds: dict[list[Embed]]) -> dict[list[Embed]]:
+    """
+    It merges the embeds of the same class.
+
+    :param embeds: The embeds to merge
+    :return: A dictionary with the merged embeds
+    """
+
+    merged_embeds = {}
+    for embed in embeds:
+        for class_name, embeds in embed.items():
+            if class_name not in merged_embeds:
+                merged_embeds[class_name] = embeds
+            else:
+                merged_embeds[class_name].extend(embeds)
+
+    return merged_embeds
 
 
 async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:

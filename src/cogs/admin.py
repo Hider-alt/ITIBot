@@ -1,8 +1,7 @@
-import re
-
-from discord import app_commands, Color
+from discord import app_commands
 from discord.ext.commands import Cog
 from src.commands.loops.check_teachers import check_variations
+from src.commands.refresh_roles import refresh_roles
 
 
 async def setup(bot):
@@ -29,27 +28,15 @@ class Admin(Cog):
     async def add_roles(self, itr, lista_classi: str):
         await itr.response.send_message("Aggiornamento ruoli in corso...", ephemeral=True)
 
-        # Get the list of roles in the server
-        roles = itr.client.school_guild.roles
+        await refresh_roles(itr, lista_classi)
 
-        # Example: "Year 1 Group 1A Group 1B" -> ["1A", "1B"]
-        classes = re.findall(r'\d[A-Z]', lista_classi)
 
-        # Remove roles that are not in the list of classes and respect the pattern \d[A-Z]
-        for i, role in enumerate(roles):
-            if role.name not in classes and re.match(r'\d[A-Z]', role.name):
-                print(f"Deleting role {role.name}")
-                await role.delete(reason="Role not in the list of classes")
+    @app_commands.command(name="clear", description="ADMIN ONLY")
+    @app_commands.describe(n="Numero di messaggi da cancellare")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def clear(self, itr, n: int):
+        await itr.response.send_message(content="Cancellazione messaggi in corso...", ephemeral=True)
 
-        roles_names = [role.name for role in roles]
+        await itr.channel.purge(limit=n)
 
-        # Create roles for each class
-        for class_name in classes:
-            if class_name not in roles_names:
-                await itr.client.school_guild.create_role(name=class_name, mentionable=True, colour=Color.random())
-
-        # Send a message with the list of classes
-        if len(classes) == 0:
-            await itr.edit_original_response(content="Nessuna classe trovata")
-        else:
-            await itr.edit_original_response(content="Classi rilevate dal testo: " + ", ".join(classes))
+        await itr.edit_original_response(content="Messaggi cancellati")

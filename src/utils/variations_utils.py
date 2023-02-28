@@ -5,7 +5,7 @@ import os
 import pandas as pd
 
 from src.utils.datetime_utils import parse_italian_date
-from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv
+from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv, read_csv_pandas
 
 base_path = "data/downloads/"
 
@@ -43,7 +43,7 @@ async def create_csv_by_pdf(link) -> str:
     return csv_path
 
 
-def update_teachers_json(csv_path):
+async def update_teachers_json(csv_path):
     """
     It updates the new.json file with the new teachers from the given CSV file.
 
@@ -51,7 +51,7 @@ def update_teachers_json(csv_path):
     """
 
     date = parse_italian_date(csv_path[:-4])
-    csv = pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')
+    csv = await read_csv_pandas(csv_path)
 
     # Replace NaN with empty string
     csv = csv.fillna('')

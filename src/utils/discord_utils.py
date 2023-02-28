@@ -1,7 +1,7 @@
 import datetime
 from itertools import groupby
 
-from discord import Embed, Color, utils
+from discord import Embed, Color, utils, TextChannel
 from discord.utils import format_dt
 
 
@@ -24,13 +24,16 @@ def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
 
         embed = Embed(title=title, color=Color.green() if missing else Color.red())
 
-        embed.add_field(name="\u200b", value="**Ora**")
-        embed.add_field(name="\u200b", value="**Docente assente**")
-        embed.add_field(name="\u200b", value="**Note**")
-        for teacher in variations:
-            embed.add_field(name=teacher['hour'], value=f"({teacher['classroom']})")
-            embed.add_field(name=teacher['teacher'], value="\u200b")
-            embed.add_field(name=teacher['notes'], value=f"(Sostituto: {teacher['substitute_1']})" if teacher['substitute_1'] != "-" else "\u200b")
+        for variation in variations:
+            embed.add_field(
+                name=variation['teacher'],
+                value=f"**Ora:** {variation['hour']}^\n"
+                      f"**Sostituto:** {variation['substitute_1']}\n"
+                      f"**Aula:** {variation['classroom']}\n"
+                      f"**Note:** {variation['notes']}\n"
+                      f"──────────────────────────────────",
+                inline=False
+            )
 
         embeds.append(embed)
 
@@ -86,14 +89,23 @@ async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:
     """
     guild = bot.school_guild
 
+    guild_channels = guild.channels
+    if not guild_channels:
+        guild_channels = await guild.fetch_channels()
+
     owner = bot.get_user(guild.owner_id)
     if owner is None:
         owner = await bot.fetch_user(guild.owner_id)
 
     for class_name, embeds in embeds_dict.items():
+        # Send in global channel
+        embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
+        await channel.send(embeds=embeds)
+
+        # Send in class channel
+        class_channel: TextChannel = utils.get(guild_channels, name=("variazioni-orario-" + class_name).lower())
         role = utils.get(guild.roles, name=class_name)
 
-        embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
-        m = await channel.send(content=role.mention, embeds=embeds)
+        m = await class_channel.send(content=role.mention, embeds=embeds)
         await m.add_reaction("\U0001f389")
         await m.add_reaction("\U0001f62d")

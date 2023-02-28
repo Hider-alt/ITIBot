@@ -1,6 +1,6 @@
 from discord import app_commands
 from discord.ext.commands import Cog
-from src.commands.loops.check_teachers import check_variations
+from src.commands.loops.check_teachers import refresh_variations
 from src.commands.refresh_roles import refresh_roles
 
 
@@ -17,7 +17,7 @@ class Admin(Cog):
     async def refresh(self, itr):
         await itr.response.send_message("Refresh in corso...", ephemeral=True)
 
-        await check_variations(itr.client)
+        await refresh_variations(itr.client)
 
         await itr.edit_original_response(content="Variazioni refreshate")
 

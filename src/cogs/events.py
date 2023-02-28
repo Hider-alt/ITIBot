@@ -3,7 +3,7 @@ from datetime import datetime
 from discord.ext import tasks
 from discord.ext.commands import Cog
 
-from src.commands.loops.check_teachers import check_variations
+from src.commands.loops.check_teachers import refresh_variations
 
 
 async def setup(bot):
@@ -18,4 +18,4 @@ class Events(Cog):
     @tasks.loop(minutes=15)
     async def check_variations_loop(self):
         print(f"[{datetime.now()}] Checking Variations")
-        await check_variations(self.bot)
+        await refresh_variations(self.bot)

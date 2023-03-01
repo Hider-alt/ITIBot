@@ -41,7 +41,7 @@ class Admin(Cog):
             for channel in itr.guild.channels:
                 if channel.name.startswith(inizia_con):
                     await channel.purge(limit=n)
-
-        await itr.channel.purge(limit=n)
+        else:
+            await itr.channel.purge(limit=n)
 
         await itr.edit_original_response(content="Messaggi cancellati")

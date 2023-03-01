@@ -3,12 +3,15 @@ import os
 import re
 
 import PyPDF2
+import pandas as pd
 import pdfplumber
 import requests
 
 from asyncio import sleep
 from bs4 import BeautifulSoup
 from requests import Timeout
+
+from src.utils.utils import to_thread
 
 
 def get_variations_links() -> list[str]:
@@ -149,3 +152,14 @@ def fix_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotat
 
     if delete_original:
         os.remove(pdf_path)
+
+
+@to_thread
+def read_csv_pandas(csv_path):
+    """
+    It reads a CSV file and returns a pandas DataFrame
+
+    :param csv_path: The path to the CSV file
+    :return: A pandas DataFrame
+    """
+    return pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')

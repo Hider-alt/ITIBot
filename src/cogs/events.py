@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytz
 from discord.ext import tasks
 from discord.ext.commands import Cog
 
@@ -17,5 +18,12 @@ class Events(Cog):
 
     @tasks.loop(minutes=15)
     async def check_variations_loop(self):
-        print(f"[{datetime.now()}] Checking Variations")
+        now = datetime.now(pytz.timezone('Europe/Rome'))
+
+        # Skip if 0 < now hour < 7
+        if 0 < now.hour < 7:
+            print(f"[{now}] Skipping Variations Check (0 < now hour < 7)")
+            return
+
+        print(f"[{now}] Checking Variations")
         await refresh_variations(self.bot)

@@ -1,7 +1,8 @@
 git+https://github.com/Rapptz/discord.py
-python-dotenv==1.0.0
+python-dotenv
 requests
 beautifulsoup4
-PyPDF2<3.0.0
+PyPDF2
 pandas
 pdfplumber
+pytz

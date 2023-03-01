@@ -26,7 +26,7 @@ def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
 
         for variation in variations:
             embed.add_field(
-                name=variation['teacher'],
+                name=f"**Docente assente**: {variation['teacher']}",
                 value=f"**Ora:** {variation['hour']}^\n"
                       f"**Sostituto:** {variation['substitute_1']}\n"
                       f"**Aula:** {variation['classroom']}\n"
@@ -98,13 +98,14 @@ async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:
         owner = await bot.fetch_user(guild.owner_id)
 
     for class_name, embeds in embeds_dict.items():
+        role = utils.get(guild.roles, name=class_name)
+
         # Send in global channel
         embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
-        await channel.send(embeds=embeds)
+        await channel.send(content=f"Classe: **{role.name}**", embeds=embeds)
 
         # Send in class channel
         class_channel: TextChannel = utils.get(guild_channels, name=("variazioni-orario-" + class_name).lower())
-        role = utils.get(guild.roles, name=class_name)
 
         m = await class_channel.send(content=role.mention, embeds=embeds)
         await m.add_reaction("\U0001f389")

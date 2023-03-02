@@ -20,8 +20,7 @@ class Events(Cog):
     async def check_variations_loop(self):
         now = datetime.now(pytz.timezone('Europe/Rome'))
 
-        # Skip if 0 < now hour < 7
-        if 0 < now.hour < 7:
+        if 0 < now.hour < 6:
             print(f"[{now}] Skipping Variations Check (0 < now hour < 7)")
             return
 

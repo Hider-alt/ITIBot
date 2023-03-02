@@ -27,10 +27,10 @@ def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
         for variation in variations:
             embed.add_field(
                 name=f":teacher: **Docente assente**: {variation['teacher']}",
-                value=f":clock1: **Ora:** {variation['hour']}^\n"
-                      f":man_teacher: **Sostituto:** {variation['substitute_1']}\n"
-                      f":school: **Aula:** {variation['classroom']}\n"
-                      f":pencil: **Note:** {variation['notes']}\n"
+                value=f"• **Ora:** {variation['hour']}^\n"
+                      f"• **Sostituto:** {variation['substitute_1']}\n"
+                      f"• **Aula:** {variation['classroom']}\n"
+                      f"• **Note:** {variation['notes']}\n"
                       f"──────────────────────────────────",
                 inline=False
             )

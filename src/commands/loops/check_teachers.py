@@ -10,7 +10,7 @@ async def refresh_variations(bot):
     clear_folder(base_path)
     refresh_json('data/new.json', 'data/old.json')
 
-    links = get_variations_links()
+    links = await get_variations_links()
     for link in links:
         print(link)
         csv_path = await create_csv_by_pdf(link)

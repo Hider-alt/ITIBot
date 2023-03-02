@@ -2,8 +2,6 @@ import datetime
 import json
 import os
 
-import pandas as pd
-
 from src.utils.datetime_utils import parse_italian_date
 from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv, read_csv_pandas
 

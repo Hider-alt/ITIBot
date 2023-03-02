@@ -3,25 +3,27 @@ import os
 import re
 
 import PyPDF2
+import aiohttp
 import pandas as pd
 import pdfplumber
-import requests
 
 from asyncio import sleep
 from bs4 import BeautifulSoup
-from requests import Timeout
 
 from src.utils.utils import to_thread
 
 
-def get_variations_links() -> list[str]:
+async def get_variations_links() -> list[str]:
     """
     It gets the links of the pdf files from the ITI page
 
     :return: A list of strings, each string is a link to a pdf file.
     """
     iti_url = "https://www.ispascalcomandini.it/variazioni-orario-istituto-tecnico-tecnologico/2017/09/15/"
-    iti_page = requests.get(iti_url).content
+    async with aiohttp.ClientSession() as session:
+        async with session.get(iti_url) as response:
+            iti_page = await response.text()
+
     soup = BeautifulSoup(iti_page, 'html.parser')
 
     # Get links of the page
@@ -43,8 +45,10 @@ async def save_PDF(url: str, path: str) -> None:
     tries = 0
     while tries < 5:
         try:
-            pdf = requests.get(url, timeout=10)
-        except Timeout:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                async with session.get(url) as response:
+                    pdf = await response.read()
+        except aiohttp.ClientError:
             tries += 1
             await sleep(3)
             continue
@@ -55,7 +59,7 @@ async def save_PDF(url: str, path: str) -> None:
         raise Exception("Could not download PDF")
 
     with open(path, 'wb') as f:
-        f.write(pdf.content)
+        f.write(pdf)
 
 
 def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):

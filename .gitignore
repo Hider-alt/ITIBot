@@ -139,8 +139,6 @@ dmypy.json
 cython_debug/
 
 logos/
-data/new.json
-data/old.json
 
 # Exclude .rar .zip
 !*.rar

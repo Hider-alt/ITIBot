@@ -2,7 +2,7 @@ import json
 import re
 from itertools import groupby
 
-from discord import Color, Embed, ui, SelectOption, Interaction, utils, Role, PermissionOverwrite
+from discord import Color, Embed, ui, SelectOption, Interaction, utils, PermissionOverwrite
 
 
 class SelectRoleView(ui.View):
@@ -52,7 +52,6 @@ class SelectClass(ui.Select):
             ),
             ephemeral=True
         )
-
 
 
 async def refresh_roles(itr, class_list):

@@ -21,7 +21,7 @@ class Events(Cog):
         now = datetime.now(pytz.timezone('Europe/Rome'))
 
         if 0 < now.hour < 6:
-            print(f"[{now}] Skipping Variations Check (0 < now hour < 7)")
+            print(f"[{now}] Skipping Variations Check (0 < now hour < 6)")
             return
 
         print(f"[{now}] Checking Variations")

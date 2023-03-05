@@ -12,7 +12,6 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
 lib/
@@ -141,8 +140,11 @@ cython_debug/
 logos/
 
 # Exclude .rar .zip
-!*.rar
-!*.zip
+*.rar
+*.zip
 
-# Exclude content of plots folder
+# Exclude downloads and plots folders content (except .gitkeep file)
+data/downloads/*
 data/plots/*
+!data/downloads/.gitkeep
+!data/plots/.gitkeep

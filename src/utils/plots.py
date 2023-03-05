@@ -33,7 +33,7 @@ async def plot_summary_per_class_number(db):
     y_values = [summary[key] / classes_count[key] for key in summary.keys()]
     plt.bar(list(summary.keys()), y_values)
 
-    set_plot_config("Overview proporzionale al numero di classi per ciascun anno", "Classi", "Ore di assenza dei prof.", y_values)
+    set_plot_config("Overview proporzionale al numero di sezioni", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
     plt.savefig('data/plots/summary_per_class_number.png')
@@ -46,7 +46,7 @@ async def plot_summary(db):
     # Create a barchart
     plt.bar(list(summary.keys()), list(summary.values()))
 
-    set_plot_config("Overview classi", "Classi", "Ore di assenza dei prof.", list(summary.values()))
+    set_plot_config("Overview classi", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
     plt.savefig('data/plots/summary.png')
@@ -60,21 +60,17 @@ async def plot_per_class_age(db, class_age):
     y_values = [item['variations'] for item in scoreboard]
     plt.bar([item['_id'] for item in scoreboard], y_values)
 
-    set_plot_config(f"Classi {class_age}°", "Classi", "Ore di assenza dei prof.", y_values)
+    set_plot_config(f"Classi {class_age}°", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
     plt.savefig(f'data/plots/class_{class_age}_scoreboard.png')
     plt.clf()
 
 
-def set_plot_config(title, x_label, y_label, y_values):
+def set_plot_config(title, x_label, y_label):
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
 
-    # Set MultipleLocator
-    num_ticks = 10
-    multiple_locator = 5 * math.ceil(max(y_values) / (num_ticks - 1) / 5)  # Round to the nearest multiple of 5
-    if multiple_locator in [0, 5]:
-        multiple_locator = 1
-    plt.gca().yaxis.set_major_locator(plt.MultipleLocator(multiple_locator))
+    # Set major_locator to integer
+    plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))

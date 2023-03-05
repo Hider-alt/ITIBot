@@ -52,7 +52,7 @@ class SelectPlot(ui.Select):
         self.custom_id = f"select_plot"
         self.placeholder = f"Seleziona uno o più grafici da vedere"
         self.options = [SelectOption(label="Overview classi", value="overall")] + \
-                       [SelectOption(label="Overview classi proporzionale al numero di classi", value="overall_proportional")] + \
+                       [SelectOption(label="Overview classi proporzionale al numero di sezioni", value="overall_proportional")] + \
                        [SelectOption(label=f"Classi {class_age}°", value=str(class_age)) for class_age in range(1, 6)] + \
                        [SelectOption(label="Tutti i grafici", value="all")]
 
@@ -63,6 +63,7 @@ class SelectPlot(ui.Select):
 
         if "all" in self.values:
             files = [discord.File(f"data/plots/class_{class_name}_scoreboard.png") for class_name in range(1, 6)]
+            files.append(discord.File("data/plots/summary_per_class_number.png"))
             files.append(discord.File("data/plots/summary.png"))
 
             await interaction.edit_original_response(embed=None, attachments=files, view=None)

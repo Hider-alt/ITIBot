@@ -20,6 +20,9 @@ def clear_folder(folder: str) -> None:
     """
 
     for file in os.listdir(folder):
+        if file == '.gitkeep':
+            continue
+
         path = os.path.join(folder, file)
         if os.path.isfile(path):
             os.remove(path)

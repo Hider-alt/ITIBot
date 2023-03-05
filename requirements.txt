@@ -6,3 +6,5 @@ pandas
 pdfplumber
 pytz
 aiohttp
+motor[srv]
+matplotlib

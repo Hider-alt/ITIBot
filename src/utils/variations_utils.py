@@ -1,11 +1,11 @@
 import datetime
-import json
-import os
 
+from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
 from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv, read_csv_pandas
 
-base_path = "data/downloads/"
+
+downloads_path = "data/downloads/"
 
 
 async def create_csv_by_pdf(link) -> str:
@@ -21,13 +21,13 @@ async def create_csv_by_pdf(link) -> str:
     filename = filename[len('variazioni-orario-'):(filename.index(datetime.datetime.strftime(datetime.datetime.now(), '%Y')) + 4)]  # 4 -> Year digits
 
     # Compose paths
-    pdf_path = base_path + filename + ".pdf"
-    fixed_path = base_path + filename + "_fixed.pdf"
-    csv_path = base_path + filename + ".csv"
+    pdf_path = downloads_path + filename + ".pdf"
+    fixed_path = downloads_path + filename + "_fixed.pdf"
+    csv_path = downloads_path + filename + ".csv"
 
     # Download PDF & fix it
     await save_PDF(link, pdf_path)
-    fix_pdf(pdf_path, fixed_path, rotation_degrees=90, delete_original=False)
+    fix_pdf(pdf_path, fixed_path, rotation_degrees=90)
 
     # Convert PDF to CSV
     ok = pdf_to_csv(fixed_path, csv_path)
@@ -41,9 +41,9 @@ async def create_csv_by_pdf(link) -> str:
     return csv_path
 
 
-async def update_teachers_json(csv_path):
+async def fetch_variations_json(csv_path) -> dict:
     """
-    It updates the new.json file with the new teachers from the given CSV file.
+    It updates the teachers in the database with the variations from the given CSV file.
 
     :param csv_path: The path to the CSV file
     """
@@ -54,16 +54,8 @@ async def update_teachers_json(csv_path):
     # Replace NaN with empty string
     csv = csv.fillna('')
 
-    variations: dict = create_variations_dict(csv, date)
+    return create_variations_dict(csv, date)
 
-    with open('data/new.json', 'r') as f:
-        # Adds the new variations to the json file
-
-        current_variations = json.load(f)
-        current_variations.update(variations)
-
-    with open('data/new.json', 'w') as f:
-        json.dump(current_variations, f, indent=4)
 
 
 def create_variations_dict(df, date: datetime) -> dict:
@@ -92,63 +84,70 @@ def create_variations_dict(df, date: datetime) -> dict:
     return daily_variations
 
 
-def refresh_json(new_path, old_path):
+def merge_variations(variations: list[dict]) -> dict:
     """
-    It refreshes the old.json file with the new.json file and then it clears the new.json file.
+    It merges the variations from different days into a single dictionary.
 
-    :param new_path: new.json path
-    :param old_path: old.json path
+    :param variations: The list of variations to merge
+    :return: The merged dictionary
     """
 
-    with open(new_path, 'r') as f:
-        new = json.load(f)
+    merged = {}
 
-    with open(old_path, 'w') as f:
-        json.dump(new, f, indent=4)
+    for variation in variations:
+        for date, teachers in variation.items():
+            if date not in merged.keys():
+                merged[date] = teachers
+            else:
+                merged[date].extend(teachers)
 
-    os.remove(new_path)
-    with open(new_path, 'w+') as f:
-        json.dump({}, f, indent=4)
+    return merged
 
 
-def compare_variations(new_path: str, old_path: str) -> tuple[list, list]:
+async def get_new_variations(mongo_client, new: dict) -> tuple[list, list]:
     """
-    It compares the old and the new variations json files and returns the differences.
+    It compares the old and the new variations and returns the differences.
 
-    :param old_path: The path to the old variations JSON file
-    :param new_path: The path to the just downloaded variations JSON file
+    :param new: The variations fetched from the PDF files
+    :param mongo_client: The MongoDB client
+
     :return: The first list contains all teachers that are missing, the second list contains all teachers that are not missing anymore.
     """
-    with open(old_path, 'r') as f:
-        old = json.load(f)
-
-    with open(new_path, 'r') as f:
-        new = json.load(f)
-
-    if old == new:
-        return [], []
+    db = Variations(mongo_client)
 
     teachers_missing = []
     teachers_returned = []
 
+    dates = list(new.keys())
+
     for date, variations in new.items():
-        if date not in old.keys():
+        old = await db.get_variations_by_date(date)
+        if not old:
             # Add all variations
             teachers_missing.extend(variations)
         else:
             for variation in variations:
-                if variation not in old[date]:
+                if variation not in old:
                     # Add variation
                     teachers_missing.append(variation)
 
-    for date, variations in old.items():
-        if date not in new.keys():
-            continue
-        else:
-            for variation in variations:
-                if variation not in new[date]:
-                    # Remove variation
-                    teachers_returned.append(variation)
+    for date in dates:
+        old = await db.get_variations_by_date(date)
+        for variation in old:
+            if variation not in new[date]:
+                # Remove variation
+                teachers_returned.append(variation)
 
     return teachers_missing, teachers_returned
 
+
+async def save_variations(mongo_client, variations: dict):
+    """
+    It saves the variations to the database.
+
+    :param variations: The variations to save
+    :param mongo_client: The MongoDB client
+    """
+
+    db = Variations(mongo_client)
+    await db.save_variations(variations)

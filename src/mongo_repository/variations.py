@@ -112,3 +112,18 @@ class Variations:
         classes_count = {k: v for k, v in sorted(classes_count.items(), key=lambda item: item[0])}
 
         return classes_count
+
+    async def get_professors_scoreboard(self):
+        """
+        Get the scoreboard for each professor
+
+        :return: The scoreboard for each professor
+        """
+
+        scoreboard = await self.variations_collection.aggregate([
+            {'$unwind': '$variations'},
+            {'$group': {'_id': '$variations.teacher', 'variations': {'$sum': 1}}},
+            {'$sort': {'variations': -1}}
+        ]).to_list(None)
+
+        return scoreboard

@@ -12,14 +12,35 @@ async def generate_plots(mongo_client):
 
     :param mongo_client: Mongo client
     """
-    clear_folder('data/plots/')
+    clear_folder('data/plots/classes')
+    clear_folder('data/plots/teachers')
+    clear_folder('data/plots/subjects')
+
     db = Variations(mongo_client)
 
+    # Classes plots
     for class_age in range(1, 6):
         await plot_per_class_age(db, class_age)
 
     await plot_summary(db)
     await plot_summary_per_class_number(db)
+
+    # Professors plots
+    await plot_professors_scoreboard(db)
+
+
+async def plot_professors_scoreboard(db):
+    scoreboard = await db.get_professors_scoreboard()
+
+    # Create a barchart
+    y_values = [item['variations'] for item in scoreboard]
+    plt.bar([item['_id'] for item in scoreboard], y_values)
+
+    set_plot_config("Istogramma prof.", "Prof.", "Ore di assenza dei prof.", rotation=90)
+
+    # Save the plot
+    plt.savefig('data/plots/teachers/professors_scoreboard.png', bbox_inches='tight')
+    plt.clf()
 
 
 async def plot_summary_per_class_number(db):
@@ -36,7 +57,7 @@ async def plot_summary_per_class_number(db):
     set_plot_config("Overview proporzionale al numero di sezioni", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
-    plt.savefig('data/plots/summary_per_class_number.png')
+    plt.savefig('data/plots/classes/summary_per_class_number.png')
     plt.clf()
 
 
@@ -49,7 +70,7 @@ async def plot_summary(db):
     set_plot_config("Overview classi", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
-    plt.savefig('data/plots/summary.png')
+    plt.savefig('data/plots/classes/summary.png')
     plt.clf()
 
 
@@ -63,14 +84,16 @@ async def plot_per_class_age(db, class_age):
     set_plot_config(f"Classi {class_age}°", "Classi", "Ore di assenza dei prof.")
 
     # Save the plot
-    plt.savefig(f'data/plots/class_{class_age}_scoreboard.png')
+    plt.savefig(f'data/plots/classes/class_{class_age}_scoreboard.png')
     plt.clf()
 
 
-def set_plot_config(title, x_label, y_label):
+def set_plot_config(title, x_label, y_label, rotation=None):
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
 
     # Set major_locator to integer
     plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+
+    plt.xticks(rotation=rotation)

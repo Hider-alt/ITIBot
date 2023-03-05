@@ -166,4 +166,4 @@ def read_csv_pandas(csv_path):
     :param csv_path: The path to the CSV file
     :return: A pandas DataFrame
     """
-    return pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='windows-1252')
+    return pd.read_csv(csv_path, converters={i: str for i in range(0, 7)}, encoding='ISO-8859-1')

@@ -2,8 +2,10 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/data/downloads/sabato-18-febbraio-2023.csv" charset="windows-1252" />
+    <file url="file://$PROJECT_DIR$/src/commands/analytics.py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/utils/discord_utils.py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/utils/pdf_utils.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/utils/plots.py" charset="UTF-8" />
     <file url="PROJECT" charset="windows-1252" />
   </component>
 </project>

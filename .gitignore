@@ -143,3 +143,6 @@ logos/
 # Exclude .rar .zip
 !*.rar
 !*.zip
+
+# Exclude content of plots folder
+data/plots/*

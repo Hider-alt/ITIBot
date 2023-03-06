@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from motor.motor_asyncio import AsyncIOMotorClient
 
 
@@ -14,9 +16,10 @@ class Variations:
         :return:
         """
         for date, variations in variations.items():
+            # Save date in Date format
             await self.variations_collection.update_one(
-                {'date': date},
-                {'$set': {'date': date, 'variations': variations}},
+                {'date': datetime.strptime(date, '%d-%m-%Y')},
+                {'$set': {'date': datetime.strptime(date, '%d-%m-%Y'), 'variations': variations}},
                 upsert=True
             )
 
@@ -25,11 +28,12 @@ class Variations:
         Get the variations for a specific date
 
         :param date: The date to get the variations for (dd-mm-yyyy)
-        :return:
+        :return: The variations for the given date
         """
 
+        # Find the variations for the given date (saved in Date format)
         variations = await self.variations_collection.find_one(
-            {'date': date},
+            {'date': datetime.strptime(date, '%d-%m-%Y')},
             {'_id': 0, 'date': 0}
         )
 
@@ -113,7 +117,7 @@ class Variations:
 
         return classes_count
 
-    async def get_professors_scoreboard(self):
+    async def get_professors_scoreboard(self) -> list:
         """
         Get the scoreboard for each professor
 
@@ -125,5 +129,87 @@ class Variations:
             {'$group': {'_id': '$variations.teacher', 'variations': {'$sum': 1}}},
             {'$sort': {'variations': -1}}
         ]).to_list(None)
+
+        return scoreboard
+
+    async def get_yearly_stats(self) -> dict:
+        """
+        Get the yearly stats (number of variations per month)
+
+        :return: Dict containing the length of variations per month ordered by month
+        """
+
+        scoreboard = await self.variations_collection.aggregate([
+            {'$unwind': '$variations'},
+            {'$group': {'_id': {'$month': '$date'}, 'variations': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]).to_list(None)
+
+        # Convert scoreboard to dict
+        scoreboard = {item['_id']: item['variations'] for item in scoreboard}
+
+        # Add months with no variations
+        for month in range(1, 13):
+            if month not in scoreboard.keys():
+                scoreboard[month] = 0
+
+        # Sort scoreboard by month
+        scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
+
+        return scoreboard
+
+    async def get_monthly_stats(self, month: int) -> dict:
+        """
+        Get the monthly stats (number of variations per day)
+
+        :param month: The month to get the stats for
+        :return: Dict containing the length of variations per day ordered by day
+        """
+
+        scoreboard = await self.variations_collection.aggregate([
+            {'$unwind': '$variations'},
+            {'$match': {'date': {'$regex': f'^[0-9]+-{month}-[0-9]+$'}}},
+            {'$group': {'_id': {'$dayOfMonth': '$date'}, 'variations': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]).to_list(None)
+
+        # Convert scoreboard to dict
+        scoreboard = {item['_id']: item['variations'] for item in scoreboard}
+
+        # Add days with no variations
+        for day in range(1, 32):
+            if day not in scoreboard.keys():
+                scoreboard[day] = 0
+
+        # Sort scoreboard by day
+        scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
+
+        return scoreboard
+
+    async def get_weekday_stats(self) -> dict:
+        """
+        Get the weekday stats (number of variations per weekday)
+
+        :return: Dict containing the length of variations per weekday ordered by weekday
+        """
+
+        # In DB the date is stored as dd-mm-yyyy (don't use $dayOfWeek)
+
+        scoreboard = await self.variations_collection.aggregate([
+            {'$unwind': '$variations'},
+            {'$group': {'_id': {'$dayOfWeek': '$date'}, 'variations': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]).to_list(None)
+
+        # Convert the scoreboard to a dict
+        scoreboard = {item['_id']: item['variations'] for item in scoreboard}
+
+        # Fill the scoreboard with the missing weekdays
+        for weekday in range(1, 8):
+            if weekday not in scoreboard.keys():
+                scoreboard[weekday] = 0
+
+        # Sort the scoreboard by weekday
+        scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
 
         return scoreboard

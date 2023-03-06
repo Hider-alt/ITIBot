@@ -30,9 +30,9 @@ async def refresh_variations(bot):
     returned_embeds = generate_embeds(returned_teachers, missing=False)
 
     merged_embeds = merge_embeds(missing_embeds, returned_embeds)
-    #if not merged_embeds:
-    #    print("No changes")
-    #    return
+    if not merged_embeds:
+        print("No changes")
+        return
 
     await send_embeds(bot, bot.log_channel, merged_embeds)
     await generate_plots(bot.mongo_client)

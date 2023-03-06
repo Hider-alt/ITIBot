@@ -145,6 +145,12 @@ logos/
 
 # Exclude downloads and plots folders content (except .gitkeep file)
 data/downloads/*
-data/plots/*
-!data/downloads/.gitkeep
-!data/plots/.gitkeep
+
+# Plots
+data/plots/classes/*
+data/plots/datetime/*
+data/plots/subjects/*
+data/plots/teachers/*
+
+# Exclude .gitkeep files
+!.gitkeep

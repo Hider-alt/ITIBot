@@ -121,7 +121,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
     list_pdf = [row for row in list_pdf if len(row) != 0]
 
     # Write list_pdf to CSV
-    with open(output_path, 'w', newline='') as f:
+    with open(output_path, 'w', newline='', encoding='ISO-8859-1') as f:
         writer = csv.writer(f)
         writer.writerows(list_pdf)
 

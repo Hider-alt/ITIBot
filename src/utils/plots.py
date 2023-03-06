@@ -33,10 +33,10 @@ async def plot_professors_scoreboard(db):
     scoreboard = await db.get_professors_scoreboard()
 
     # Create a barchart
-    y_values = [item['variations'] for item in scoreboard]
-    plt.bar([item['_id'] for item in scoreboard], y_values)
+    y_values = [item['variations'] for item in scoreboard[:20]]
+    plt.bar([item['_id'] for item in scoreboard[:20]], y_values)
 
-    set_plot_config("Istogramma prof.", "Prof.", "Ore di assenza dei prof.", rotation=90)
+    set_plot_config("Top 20 prof più assenti", "Prof.", "Ore di assenza dei prof.", rotation=90)
 
     # Save the plot
     plt.savefig('data/plots/teachers/professors_scoreboard.png', bbox_inches='tight')

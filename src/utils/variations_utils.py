@@ -27,7 +27,7 @@ async def create_csv_by_pdf(link) -> str:
 
     # Download PDF & fix it
     await save_PDF(link, pdf_path)
-    fix_pdf(pdf_path, fixed_path, rotation_degrees=90)
+    fix_pdf(pdf_path, fixed_path, rotation_degrees=90, delete_original=False)
 
     # Convert PDF to CSV
     ok = pdf_to_csv(fixed_path, csv_path)

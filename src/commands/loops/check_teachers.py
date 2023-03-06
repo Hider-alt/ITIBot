@@ -17,7 +17,7 @@ async def refresh_variations(bot):
 
     new = []
     for link in links:
-        print(link)
+        print(f"Fetching {link}")
         csv_path = await create_csv_by_pdf(link)
         new.append(await fetch_variations_json(csv_path))
 

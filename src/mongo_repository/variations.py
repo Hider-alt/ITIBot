@@ -213,3 +213,29 @@ class Variations:
         scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
 
         return scoreboard
+
+    async def get_hourly_stats(self) -> dict:
+        """
+        Get the hourly stats (number of variations per hour got from each variation in hour field)
+
+        :return: Dict containing the length of variations per hour ordered by hour (1-6 inclusive)
+        """
+
+        scoreboard = await self.variations_collection.aggregate([
+            {'$unwind': '$variations'},
+            {'$group': {'_id': '$variations.hour', 'variations': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]).to_list(None)
+
+        # Convert the scoreboard to a dict
+        scoreboard = {item['_id']: item['variations'] for item in scoreboard}
+
+        # Fill the scoreboard with the missing hours
+        for hour in range(1, 7):
+            if str(hour) not in scoreboard.keys():
+                scoreboard[str(hour)] = 0
+
+        # Sort the scoreboard by hour
+        scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
+
+        return scoreboard

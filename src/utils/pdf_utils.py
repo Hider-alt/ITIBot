@@ -86,7 +86,11 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
             if list_pdf[i][0] != 'Ora':
                 return False
 
-            list_pdf[i].remove('Firma')
+            # Remove 'Firma' element if it exists or "..." element if it exists
+            if 'Firma' in list_pdf[i]:
+                list_pdf[i].remove('Firma')
+            elif '...' in list_pdf[i]:
+                list_pdf[i].remove('...')
 
             # Remove all None elements
             list_pdf[i] = [x for x in list_pdf[i] if x]
@@ -97,7 +101,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
         if len(row) == 0:
             continue
 
-        if row[0] == 'Ora':
+        if row[0] == 'Ora' or row[1] is None or row[1] == '':
             # Repeating header
             list_pdf[i] = []
             continue
@@ -114,8 +118,11 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
 
         # Split second element in 2nd and 3rd element (e.g. '3A(LT)' -> '3A', 'LT'; '5I\n(PALESTRAPASCAL)' -> '5I', 'PALESTRAPASCAL')
         text = str(row[1])  # Copy the string
+
         list_pdf[i][1] = text.split('\n')[0].split('(')[0]
-        classroom = re.findall(r'\((.*?)\)', text)[0]
+
+        classroom = re.findall(r'\((.*?)\)', text)
+        classroom = classroom[0] if len(classroom) > 0 else  ''
         list_pdf[i].insert(2, classroom)
 
     list_pdf = [row for row in list_pdf if len(row) != 0]

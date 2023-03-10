@@ -57,7 +57,6 @@ async def fetch_variations_json(csv_path) -> dict:
     return create_variations_dict(csv, date)
 
 
-
 def create_variations_dict(df, date: datetime) -> dict:
     """
     It creates a dictionary with the variations from the given CSV file.

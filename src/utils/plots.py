@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.mongo_repository.variations import Variations
 import matplotlib.pyplot as plt
 
@@ -113,7 +115,7 @@ async def plot_summary_per_class_number(db):
     y_values = [summary[key] / classes_count[key] for key in summary.keys()]
     plt.bar(list(summary.keys()), y_values)
 
-    set_plot_config("Overview proporzionale al numero di sezioni", "Classi", "Ore di assenza dei prof.")
+    set_plot_config("Overview proporzionale al numero di sezioni", "Classi", "Ore di assenza dei prof. per sezione")
 
     # Save the plot
     plt.savefig('data/plots/classes/summary_per_class_number.png')
@@ -154,5 +156,8 @@ def set_plot_config(title, x_label, y_label, rotation=None):
 
     # Set major_locator to integer
     plt.gca().yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+
+    # Set generation date in top-right corner of the plot
+    plt.text(0.99, 0.985, f"Generato il {datetime.now().strftime('%d/%m/%Y alle %H:%M')}", horizontalalignment='right', verticalalignment='top', transform=plt.gca().transAxes, fontsize=8)
 
     plt.xticks(rotation=rotation)

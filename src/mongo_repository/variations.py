@@ -188,12 +188,10 @@ class Variations:
 
     async def get_weekday_stats(self) -> dict:
         """
-        Get the weekday stats (number of variations per weekday)
+        Get the weekday stats (number of variations per weekday), each weekday divided by the number of documents in the DB for that weekday
 
         :return: Dict containing the length of variations per weekday ordered by weekday
         """
-
-        # In DB the date is stored as dd-mm-yyyy (don't use $dayOfWeek)
 
         scoreboard = await self.variations_collection.aggregate([
             {'$unwind': '$variations'},
@@ -201,18 +199,41 @@ class Variations:
             {'$sort': {'_id': 1}}
         ]).to_list(None)
 
-        # Convert the scoreboard to a dict
+        # Convert scoreboard to dict
         scoreboard = {item['_id']: item['variations'] for item in scoreboard}
 
-        # Fill the scoreboard with the missing weekdays
+        # Add weekdays with no variations
         for weekday in range(1, 8):
             if weekday not in scoreboard.keys():
                 scoreboard[weekday] = 0
 
-        # Sort the scoreboard by weekday
+        # Sort scoreboard by weekday
         scoreboard = {k: v for k, v in sorted(scoreboard.items(), key=lambda item: item[0])}
 
+        # Get the number of documents for each weekday
+        documents_count = await self.variations_collection.aggregate([
+            {'$group': {'_id': {'$dayOfWeek': '$date'}, 'count': {'$sum': 1}}},
+            {'$sort': {'_id': 1}}
+        ]).to_list(None)
+
+        # Convert documents_count to dict
+        documents_count = {item['_id']: item['count'] for item in documents_count}
+
+        # Add weekdays with no documents
+        for weekday in range(1, 8):
+            if weekday not in documents_count.keys():
+                documents_count[weekday] = 0
+
+        # Sort documents_count by weekday
+        documents_count = {k: v for k, v in sorted(documents_count.items(), key=lambda item: item[0])}
+
+        # Divide the scoreboard by the number of documents for each weekday
+        for weekday in scoreboard.keys():
+            if documents_count[weekday] != 0:
+                scoreboard[weekday] = scoreboard[weekday] / documents_count[weekday]
+
         return scoreboard
+
 
     async def get_hourly_stats(self) -> dict:
         """

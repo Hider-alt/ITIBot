@@ -11,7 +11,7 @@ from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
 
 from src.commands.analytics import AnalyticsView
-from src.commands.refresh_roles import SelectRoleView
+from src.commands.create_roles import SelectRoleView
 
 load_dotenv()
 

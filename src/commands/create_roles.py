@@ -54,46 +54,45 @@ class SelectClass(ui.Select):
         )
 
 
-async def refresh_roles(itr, class_list):
-    # Get the list of roles in the server
+async def add_roles(itr, class_list):
     roles = itr.client.school_guild.roles
 
     # Example: "Year 1 Group 1A Group 1B" -> ["1A", "1B"]
-    classes = re.findall(r'\d[A-Z]', class_list)
+    new_classes = re.findall(r'\d[A-Z]', class_list)
 
-    # Remove roles that are not in the list of classes and respect the pattern \d[A-Z]
+    # Remove roles that are not in the list of new_classes and respect the pattern \d[A-Z]
     for i, role in enumerate(roles):
-        if role.name not in classes and re.match(r'\d[A-Z]', role.name):
+        if role.name not in new_classes and re.match(r'\d[A-Z]', role.name):
             print(f"Deleting role {role.name}")
-            await role.delete(reason="Role not in the list of classes")
+            await role.delete(reason="Class no longer exists")
 
     roles_names = [role.name for role in roles]
 
     # Create roles for each class
-    for class_name in classes:
+    for class_name in new_classes:
         if class_name not in roles_names:
-            await itr.client.school_guild.create_role(name=class_name, mentionable=True, colour=Color.random())
+            await itr.client.school_guild.create_role(name=class_name, mentionable=False, hoist=True, colour=Color.random(), reason="Role created by the bot")
 
-    # Send a message with the list of classes
-    if len(classes) == 0:
+    # Send a message with the list of new_classes
+    if len(new_classes) == 0:
         await itr.edit_original_response(content="Nessuna classe trovata")
     else:
-        await itr.edit_original_response(content="Classi rilevate dal testo: " + ", ".join(classes))
+        await itr.edit_original_response(content="Classi rilevate dal testo: " + ", ".join(new_classes))
 
-    # Group classes by first digit using groupby
-    classes = [list(group) for _, group in groupby(classes, lambda x: x[0])]
+    # Group new_classes by first digit using groupby
+    new_classes = [list(group) for _, group in groupby(new_classes, lambda x: x[0])]
 
-    # Save classes to config.json
+    # Save new_classes to config.json
     with open("data/config.json", "r") as f:
         config = json.load(f)
 
-    config['classes'] = classes
+    config['new_classes'] = new_classes
 
     with open("data/config.json", "w") as f:
         json.dump(config, f)
 
-    await send_select_role_message(itr.client, classes)
-    await create_channels(itr.client, classes)
+    await send_select_role_message(itr.client, new_classes)
+    await create_channels(itr.client, new_classes)
 
 
 async def send_select_role_message(client, classes: list[list[str]]):

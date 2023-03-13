@@ -3,7 +3,7 @@ from discord.ext.commands import Cog
 
 from src.commands.analytics import AnalyticsView
 from src.commands.loops.check_teachers import refresh_variations
-from src.commands.refresh_roles import refresh_roles
+from src.commands.create_roles import add_roles
 
 
 async def setup(bot):
@@ -43,7 +43,7 @@ class Admin(Cog):
     async def add_roles(self, itr, lista_classi: str):
         await itr.response.send_message("Aggiornamento ruoli in corso...", ephemeral=True)
 
-        await refresh_roles(itr, lista_classi)
+        await add_roles(itr, lista_classi)
 
     @app_commands.command(name="clear", description="ADMIN ONLY")
     @app_commands.describe(n="Numero di messaggi da cancellare")

@@ -27,16 +27,16 @@ async def create_csv_by_pdf(link) -> str:
 
     # Download PDF & fix it
     await save_PDF(link, pdf_path)
-    fix_pdf(pdf_path, fixed_path, rotation_degrees=90, delete_original=False)
 
-    # Convert PDF to CSV
-    ok = pdf_to_csv(fixed_path, csv_path)
-    if not ok:
-        # Retry with a different rotation
-        fix_pdf(pdf_path, fixed_path)
-        ok = pdf_to_csv(fixed_path, csv_path)
-        if not ok:
-            raise Exception("Error while converting PDF to CSV")
+    # Convert PDF to CSV (try with different degrees, incrementing by 90)
+    for i in range(0, 360, 90):
+        fix_pdf(pdf_path, fixed_path, rotation_degrees=i, delete_original=False)
+
+        ok = pdf_to_csv(fixed_path, csv_path, delete_original=False)
+        if ok:
+            break
+    else:
+        raise Exception("Error while converting PDF to CSV")
 
     return csv_path
 

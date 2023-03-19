@@ -1,5 +1,8 @@
 #! /bin/bash
 
+git stash
+git stash drop
+
 # Pull latest changes
 git pull origin main
 

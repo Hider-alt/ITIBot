@@ -4,6 +4,7 @@ from discord.ext.commands import Cog
 from src.commands.analytics import AnalyticsView
 from src.commands.loops.check_teachers import refresh_variations
 from src.commands.create_roles import add_roles
+from src.utils.plots import generate_plots
 
 
 async def setup(bot):
@@ -36,6 +37,15 @@ class Admin(Cog):
         await refresh_variations(itr.client)
 
         await itr.edit_original_response(content="Variazioni refreshate")
+
+    @app_commands.command(name="genera_grafici", description="ADMIN ONLY")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def generate_charts(self, itr):
+        await itr.response.send_message("Generazione grafici in corso...", ephemeral=True)
+
+        await generate_plots(self.bot.mongo_client)
+
+        await itr.edit_original_response(content="Grafici generati")
 
     @app_commands.command(name="aggiungi_ruoli", description="ADMIN ONLY")
     @app_commands.describe(lista_classi="Lista delle classi prese dall'orario delle classi (prima pagina)")

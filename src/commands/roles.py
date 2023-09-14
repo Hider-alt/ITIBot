@@ -2,6 +2,7 @@ import json
 import re
 from itertools import groupby
 
+import discord
 from discord import Color, Embed, ui, SelectOption, Interaction, utils, PermissionOverwrite
 
 
@@ -21,8 +22,8 @@ class SelectClass(ui.Select):
         self.options = [SelectOption(label=class_name) for class_name in classes]
 
     async def callback(self, interaction: Interaction):
-        # Check if the user has any role that matches the pattern \d[A-Z]
-        user_roles = [role for role in interaction.user.roles if re.match(r'\d[A-Z]', role.name)]
+        # Check if the user has any role that matches the pattern \d[A-Z]+
+        user_roles = [role for role in interaction.user.roles if re.match(r'\d[A-Z]+', role.name)]
 
         if self.values[0] in [role.name for role in user_roles]:
             await interaction.user.remove_roles(utils.get(interaction.guild.roles, name=self.values[0]), reason="User removed this role")
@@ -57,14 +58,17 @@ class SelectClass(ui.Select):
 async def add_roles(itr, class_list):
     roles = itr.client.school_guild.roles
 
-    # Example: "Year 1 Group 1A Group 1B" -> ["1A", "1B"]
-    new_classes = re.findall(r'\d[A-Z]', class_list)
+    # Example: "Year 1 Group 1A Group 1B Group 1BIO" -> ["1A", "1B", "1BIO"]
+    new_classes = re.findall(r'\d[A-Z]+', class_list)
 
-    # Remove roles that are not in the list of new_classes and respect the pattern \d[A-Z]
+    # Remove roles that are not in the list of new_classes and respect the pattern \d[A-Z]+
     for i, role in enumerate(roles):
-        if role.name not in new_classes and re.match(r'\d[A-Z]', role.name):
+        if role.name not in new_classes and re.match(r'\d[A-Z]+', role.name):
             print(f"Deleting role {role.name}")
-            await role.delete(reason="Class no longer exists")
+            try:
+                await role.delete(reason="Class no longer exists")
+            except discord.errors.NotFound:
+                pass
 
     roles_names = [role.name for role in roles]
 
@@ -95,6 +99,20 @@ async def add_roles(itr, class_list):
     await create_channels(itr.client, new_classes)
 
 
+async def upgrade_class(itr):
+    # Change to each user, his role from <number><letter> to <number + 1><letter> (if the role exists, otherwise delete it)
+    for user in itr.guild.members:
+        for role in user.roles:
+            if re.match(r'\d[A-Z]+', role.name):
+                new_role_name = str(int(role.name[0]) + 1) + role.name[1:]
+
+                new_role = utils.get(itr.guild.roles, name=new_role_name)
+                if new_role is not None:
+                    await user.add_roles(new_role, reason="User upgraded his class")
+
+                await user.remove_roles(role, reason="User upgraded his class")
+
+
 async def send_select_role_message(client, classes: list[list[str]]):
     embed = Embed(
         title="Seleziona la tua classe",
@@ -109,7 +127,7 @@ async def create_channels(client, classes: list[list[str]]):
 
     # Delete all channels that start with "variazioni-orario-" and are not in the list of classes already created
     for channel in await client.school_guild.fetch_channels():
-        if channel.name.startswith("variazioni-orario-") and channel.name[:-2] not in classes_names:
+        if channel.name.startswith("variazioni-orario-") and channel.name[18:] not in classes_names:  # 18 = len("variazioni-orario-")
             print(f"Deleting channel {channel.name}")
             await channel.delete(reason="Channel already exists")
 
@@ -138,12 +156,17 @@ async def create_channels(client, classes: list[list[str]]):
             if utils.get(category.text_channels, name=channel_name) is not None:  # Check if the channel already exists
                 continue
 
+            class_role = utils.get(client.school_guild.roles, name=class_name)
+            if class_role is None:
+                # Create the role if it doesn't exist
+                class_role = await client.school_guild.create_role(name=class_name, mentionable=False, hoist=True, colour=Color.random(), reason="Role created by the bot")
+
             await client.school_guild.create_text_channel(
                 name=channel_name,
                 category=category,
                 overwrites={
                     client.school_guild.default_role: every_perms,
-                    utils.get(client.school_guild.roles, name=class_name): role_perms,
+                    class_role: role_perms,
                     utils.get(client.school_guild.roles, name="ITI Cesena"): bot_perms
                 }
             )

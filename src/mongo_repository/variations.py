@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 class Variations:
     def __init__(self, mongo_client: AsyncIOMotorClient):
         self.mongo_client = mongo_client
-        self.variations_collection = self.mongo_client['ITI'].variations
+        self.variations_collection = self.mongo_client['ITI'].variations24
 
     async def save_variations(self, variations: dict[list[dict]]):
         """

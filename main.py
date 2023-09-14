@@ -11,7 +11,7 @@ from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
 
 from src.commands.analytics import AnalyticsView
-from src.commands.create_roles import SelectRoleView
+from src.commands.roles import SelectRoleView
 
 load_dotenv()
 
@@ -80,6 +80,7 @@ async def main():
 
 intents = Intents.default()
 intents.message_content = True
+intents.members = True
 bot = MyBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
 
 asyncio.run(main())

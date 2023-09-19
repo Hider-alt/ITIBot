@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
@@ -16,12 +17,11 @@ async def create_csv_by_pdf(link) -> str:
     :return: The path to the CSV file
     """
 
-    # Get last part of link
+    # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year> (in italian)
     filename = link.split('/')[-1][:-4].lower()
-    try:
-        filename = filename[len('variazioni-orario-'):(filename.index(datetime.datetime.strftime(datetime.datetime.now(), '%Y')) + 4)]
-    except ValueError:
-        filename = filename[len('variazioni-orario-'):] + '-' + datetime.datetime.strftime(datetime.datetime.now(), '%Y')
+    date = re.search(r'\d+-\w+', filename).group(0)
+    date = parse_italian_date(date)
+    filename = datetime.datetime.strftime(date, '%d-%m-%Y')
 
     # Compose paths
     pdf_path = downloads_path + filename + ".pdf"
@@ -51,7 +51,7 @@ async def fetch_variations_json(csv_path) -> dict:
     :param csv_path: The path to the CSV file
     """
 
-    date = parse_italian_date(csv_path[:-4])
+    date = datetime.datetime.strptime(csv_path.split('/')[-1][:-4], '%d-%m-%Y')
     csv = await read_csv_pandas(csv_path)
 
     # Replace NaN with empty string

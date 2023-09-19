@@ -3,13 +3,13 @@ import datetime
 
 def parse_italian_date(date: str) -> datetime:
     """
-    It parses a string with a date in italian with the format `[weekday]-[day]-[month]-[year]`
+    It parses a string with a date in italian with the format `[day]-[month]`
 
     :param date: The string containing the date in italian
     :returns: The date in datetime format
     """
     # Get day, month and year
-    weekday, day, month, year = date.split('-')
+    day, month = date.split('-')
 
     # Get month
     month = {
@@ -28,6 +28,6 @@ def parse_italian_date(date: str) -> datetime:
     }[month]
 
     # Create datetime object
-    date = datetime.datetime(int(year), month, int(day))
+    date = datetime.datetime(year=datetime.datetime.now().year, month=month, day=int(day))
 
     return date

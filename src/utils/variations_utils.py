@@ -18,7 +18,10 @@ async def create_csv_by_pdf(link) -> str:
 
     # Get last part of link
     filename = link.split('/')[-1][:-4].lower()
-    filename = filename[len('variazioni-orario-'):(filename.index(datetime.datetime.strftime(datetime.datetime.now(), '%Y')) + 4)]  # 4 -> Year digits
+    try:
+        filename = filename[len('variazioni-orario-'):(filename.index(datetime.datetime.strftime(datetime.datetime.now(), '%Y')) + 4)]
+    except ValueError:
+        filename = filename[len('variazioni-orario-'):] + '-' + datetime.datetime.strftime(datetime.datetime.now(), '%Y')
 
     # Compose paths
     pdf_path = downloads_path + filename + ".pdf"

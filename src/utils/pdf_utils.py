@@ -78,6 +78,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
             table = page.extract_table()
             list_pdf.extend(table)
 
+    firma_index = None
     for i, row in enumerate(list_pdf):
         if i == 0:
             # Headers
@@ -88,6 +89,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
 
             # Remove 'Firma' element if it exists or "..." element if it exists
             if 'Firma' in list_pdf[i]:
+                firma_index = list_pdf[i].index('Firma')
                 list_pdf[i].remove('Firma')
             elif '...' in list_pdf[i]:
                 list_pdf[i].remove('...')
@@ -101,20 +103,21 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
         if len(row) == 0:
             continue
 
+        # Repeating header
         if row[0] == 'Ora' or row[1] is None or row[1] == '':
-            # Repeating header
             list_pdf[i] = []
             continue
 
+        # Remove the row and the next one (if it exists)
         if 'ISS "Pascal Comandini" - Cesena' in row[0]:
-            # Remove the row and the next one (if it exists)
             list_pdf[i] = []
             if i + 1 < len(list_pdf):
                 list_pdf[i + 1] = []
             continue
 
         # Remove 'Firma' element
-        list_pdf[i].pop(-1)
+        if firma_index is not None:
+            row.pop(firma_index)
 
         # Split second element in 2nd and 3rd element (e.g. '3A(LT)' -> '3A', 'LT'; '5I\n(PALESTRAPASCAL)' -> '5I', 'PALESTRAPASCAL')
         text = str(row[1])  # Copy the string
@@ -122,7 +125,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
         list_pdf[i][1] = text.split('\n')[0].split('(')[0]
 
         classroom = re.findall(r'\((.*?)\)', text)
-        classroom = classroom[0] if len(classroom) > 0 else  ''
+        classroom = classroom[0] if len(classroom) > 0 else ''
         list_pdf[i].insert(2, classroom)
 
     list_pdf = [row for row in list_pdf if len(row) != 0]

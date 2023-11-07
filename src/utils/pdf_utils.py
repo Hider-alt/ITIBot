@@ -31,7 +31,8 @@ async def get_variations_links() -> list[str]:
 
     # Filter only pdf links
     links = [link.get('href') for link in a]
-    return [link for link in links if link.startswith('https://www.ispascalcomandini.it/wp-content/uploads/2017/09') and not 'parte2' in link]
+    return [link for link in links if
+            link.startswith('https://www.ispascalcomandini.it/wp-content/uploads/2017/09') and 'parte2' not in link]
 
 
 async def save_PDF(url: str, path: str) -> None:

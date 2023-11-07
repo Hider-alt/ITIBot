@@ -12,6 +12,7 @@ from discord.ext.commands import Bot
 
 from src.commands.analytics import AnalyticsView
 from src.commands.roles import SelectRoleView
+from src.utils.plots import generate_plots
 
 load_dotenv()
 
@@ -21,12 +22,12 @@ class MyBot(Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
-        self.guild = Object(id=1077747577384075354)
+        self.guild = Object(id=int(os.environ['GUILD_ID']))
 
         self.school_guild = None
-        self.log_channel = 1077747715775139851
-        self.select_channel = 1079407521409794178
-        self.analytics_channel = 1081715105013715086
+        self.log_channel = int(os.environ['LOG_CHANNEL'])
+        self.select_channel = int(os.environ['SELECT_CHANNEL'])
+        self.analytics_channel = int(os.environ['ANALYTICS_CHANNEL'])
 
         self.mongo_client = None
 
@@ -66,6 +67,8 @@ class MyBot(Bot):
             name="www.ispascalcomandini.it",
             type=ActivityType.watching
         ))
+
+        await generate_plots(self.mongo_client)
 
 
 async def main():

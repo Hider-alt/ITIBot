@@ -25,4 +25,4 @@ class Events(Cog):
             return
 
         print(f"[{now}] Checking Variations")
-        #await refresh_variations(self.bot)
+        await refresh_variations(self.bot)

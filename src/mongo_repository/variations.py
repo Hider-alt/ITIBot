@@ -46,9 +46,11 @@ class Variations:
         :return: The scoreboard
         """
 
+        # Filter only _id != '' and 2 <= _id.length < 10
         scoreboard = await self.variations_collection.aggregate([
             {'$unwind': '$variations'},
             {'$group': {'_id': '$variations.class', 'variations': {'$sum': 1}}},
+            {'$match': {'$and': [{'_id': {'$ne': ''}}, {'_id': {'$regex': '^\w{2,10}$'}}]}},
             {'$sort': {'variations': -1}}
         ]).to_list(None)
 

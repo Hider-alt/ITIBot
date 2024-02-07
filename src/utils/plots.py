@@ -16,10 +16,9 @@ async def generate_plots(mongo_client):
 
     :param mongo_client: Mongo client
     """
-    clear_folder('data/plots/classes')
-    clear_folder('data/plots/datetime')
-    clear_folder('data/plots/teachers')
-    clear_folder('data/plots/subjects')
+    folders = ['data/plots/classes', 'data/plots/datetime', 'data/plots/teachers', 'data/plots/subjects']
+    for folder in folders:
+        clear_folder(folder)
 
     db = Variations(mongo_client)
 

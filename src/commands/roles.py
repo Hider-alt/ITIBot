@@ -13,6 +13,7 @@ class SelectRoleView(ui.View):
         for class_list in classes:
             self.add_item(SelectClass(class_list))
 
+
 class SelectClass(ui.Select):
     def __init__(self, classes: list[str]):
         super().__init__()
@@ -77,6 +78,8 @@ async def add_roles(itr, class_list):
         if class_name not in roles_names:
             await itr.client.school_guild.create_role(name=class_name, mentionable=False, hoist=True, colour=Color.random(), reason="Role created by the bot")
 
+    await itr.client.school_guild.create_role(name="Diplomato", mentionable=False, hoist=True, colour=Color.gold(), reason="Role created by the bot")
+
     # Send a message with the list of new_classes
     if len(new_classes) == 0:
         await itr.edit_original_response(content="Nessuna classe trovata")
@@ -104,7 +107,7 @@ async def upgrade_class(itr):
     for user in itr.guild.members:
         for role in user.roles:
             if re.match(r'\d[A-Z]+', role.name):
-                new_role_name = str(int(role.name[0]) + 1) + role.name[1:]
+                new_role_name = "Diplomato" if int(role.name[0]) == 5 else str(int(role.name[0]) + 1) + role.name[1:]
 
                 new_role = utils.get(itr.guild.roles, name=new_role_name)
                 if new_role is not None:

@@ -3,9 +3,13 @@ import json
 import logging
 import sys
 import os
+import threading
+import uvicorn
+
 import motor.motor_asyncio as motor
 
 from dotenv import load_dotenv
+from fastapi import FastAPI
 
 from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
@@ -17,17 +21,32 @@ from src.utils.plots import generate_plots
 load_dotenv()
 
 
+# Configure health check on port 8000
+app = FastAPI()
+
+
+@app.get("/")
+async def health_check():
+    return {"status": "ok"}
+
+
+def run_health_check():
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
 class MyBot(Bot):
     """Subclassing Discord bot class"""
 
     def __init__(self, **options):
         super().__init__(**options)
-        self.guild = Object(id=int(os.environ['GUILD_ID']))
+        prod = os.environ.get('PROD', 'False').lower() == 'true'
+
+        self.guild = Object(id=int(os.environ['GUILD_ID'] if prod else os.environ['GUILD_ID_TEST']))
 
         self.school_guild = None
-        self.log_channel = int(os.environ['LOG_CHANNEL'])
-        self.select_channel = int(os.environ['SELECT_CHANNEL'])
-        self.analytics_channel = int(os.environ['ANALYTICS_CHANNEL'])
+        self.log_channel = int(os.environ['LOG_CHANNEL'] if prod else os.environ['LOG_CHANNEL_TEST'])
+        self.select_channel = int(os.environ['SELECT_CHANNEL'] if prod else os.environ['SELECT_CHANNEL_TEST'])
+        self.analytics_channel = int(os.environ['ANALYTICS_CHANNEL'] if prod else os.environ['ANALYTICS_CHANNEL_TEST'])
 
         self.mongo_client = None
 
@@ -72,6 +91,9 @@ class MyBot(Bot):
 
 
 async def main():
+    # Heartbeat
+
+    # Discord
     async with bot:
         try:
             logging.basicConfig(level=logging.WARNING)
@@ -85,5 +107,9 @@ intents = Intents.default()
 intents.message_content = True
 intents.members = True
 bot = MyBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
+
+# Start Uvicorn in a separate thread (for health check)
+uvicorn_thread = threading.Thread(target=run_health_check)
+uvicorn_thread.start()
 
 asyncio.run(main())

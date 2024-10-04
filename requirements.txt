@@ -2,9 +2,9 @@ git+https://github.com/Rapptz/discord.py
 python-dotenv
 beautifulsoup4
 PyPDF2<3.0.0
-pandas
 pdfplumber
 pytz
 aiohttp
 motor[srv]
+pandas
 matplotlib

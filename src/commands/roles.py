@@ -93,7 +93,7 @@ async def add_roles(itr, class_list):
     with open("data/config.json", "r") as f:
         config = json.load(f)
 
-    config['new_classes'] = new_classes
+    config['classes'] = new_classes
 
     with open("data/config.json", "w") as f:
         json.dump(config, f)

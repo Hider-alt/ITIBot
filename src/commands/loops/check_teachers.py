@@ -14,6 +14,7 @@ async def refresh_variations(bot):
     """
     clear_folder('data/downloads/')
     links = await get_variations_links()
+    print(links)
 
     new = []
     for link in links:

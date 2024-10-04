@@ -8,3 +8,5 @@ aiohttp
 motor[srv]
 pandas
 matplotlib
+uvicorn
+fastapi

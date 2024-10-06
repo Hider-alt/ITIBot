@@ -2,6 +2,7 @@ import datetime
 from itertools import groupby
 
 from discord import Embed, Color, utils, TextChannel
+from discord.types.role import Role
 from discord.utils import format_dt
 
 
@@ -98,7 +99,9 @@ async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:
         owner = await bot.fetch_user(guild.owner_id)
 
     for class_name, embeds in embeds_dict.items():
-        role = utils.get(guild.roles, name=class_name)
+        role: Role = utils.get(guild.roles, name=class_name)
+        if not role:
+            continue
 
         # Send in global channel
         embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]

@@ -13,6 +13,7 @@ from fastapi import FastAPI
 
 from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
+from uvicorn import Config, Server
 
 from src.commands.analytics import AnalyticsView
 from src.commands.roles import SelectRoleView
@@ -30,9 +31,13 @@ async def health_check():
     return {"status": "ok"}
 
 
-def run_health_check():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+async def start_health_check():
+    """Start the FastAPI server."""
+    config = Config(app=app, host="0.0.0.0", port=8000, log_level="info")
+    server = Server(config)
+
     print("Health check started")
+    await server.serve()
 
 
 class MyBot(Bot):
@@ -93,8 +98,14 @@ class MyBot(Bot):
 
 async def main():
     # Heartbeat
+    asyncio.create_task(start_health_check())
 
     # Discord
+    intents = Intents.default()
+    intents.message_content = True
+    intents.members = True
+    bot = MyBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
+
     async with bot:
         try:
             logging.basicConfig(level=logging.WARNING)
@@ -104,13 +115,5 @@ async def main():
             sys.exit()
 
 
-intents = Intents.default()
-intents.message_content = True
-intents.members = True
-bot = MyBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
-
-# Start Uvicorn in a separate thread (for health check)
-uvicorn_thread = threading.Thread(target=run_health_check)
-uvicorn_thread.start()
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

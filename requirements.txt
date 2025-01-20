@@ -8,5 +8,5 @@ aiohttp
 motor[srv]
 pandas
 matplotlib
-uvicorn
+uvicorn==0.32.0
 fastapi

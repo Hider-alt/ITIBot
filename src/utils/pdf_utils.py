@@ -21,7 +21,7 @@ async def get_variations_links() -> list[str]:
     """
     iti_url = "https://www.ispascalcomandini.it/variazioni-orario-istituto-tecnico-tecnologico/2017/09/15/"
     async with aiohttp.ClientSession() as session:
-        async with session.get(iti_url) as response:
+        async with session.get(iti_url, ssl=False) as response:
             iti_page = await response.text()
 
     soup = BeautifulSoup(iti_page, 'html.parser')
@@ -47,7 +47,7 @@ async def save_PDF(url: str, path: str) -> None:
     while tries < 5:
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
-                async with session.get(url) as response:
+                async with session.get(url, ssl=False) as response:
                     pdf = await response.read()
         except aiohttp.ClientError:
             tries += 1
@@ -63,7 +63,34 @@ async def save_PDF(url: str, path: str) -> None:
         f.write(pdf)
 
 
-def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
+def fix_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
+    """
+    It takes a PDF file, rotates each page and saves the result to a new PDF file
+
+    :param pdf_path: The path to the PDF file you want to rotate
+    :param output_path: The path to the output file
+    :param delete_original: If True, the original PDF will be deleted, defaults to True (optional)
+    :param rotation_degrees: The degrees to rotate the pages, defaults to 270
+    """
+    with open(pdf_path, 'rb') as pdf_file:
+        # Rotate pages
+        pdf_reader = PyPDF2.PdfFileReader(pdf_file, strict=False)
+        pdf_writer = PyPDF2.PdfFileWriter()
+
+        for page in range(pdf_reader.numPages):
+            page = pdf_reader.getPage(page)
+            page.rotateClockwise(rotation_degrees)
+            pdf_writer.addPage(page)
+
+        # Save the rotated pages to a new PDF file
+        with open(output_path, 'wb') as new_pdf:
+            pdf_writer.write(new_pdf)
+
+    if delete_original:
+        os.remove(pdf_path)
+
+
+def pdf_to_csv_old_ui(pdf_path: str, output_path: str, delete_original=True):
     """
     It takes a PDF file, converts it to a CSV file, and saves it to a given path
 
@@ -81,12 +108,11 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
 
     firma_index = None
     for i, row in enumerate(list_pdf):
+        # First row handling
         if i == 0:
             # Headers
             # [['Ora Classe Doc.Assente Sost.1 Sost.2 Pagam. Note Firma', None, None, None, None, None, None, None] -> ['Ora', 'Classe', 'Doc.Assente', 'Sost.1', 'Sost.2', 'Pagam.', 'Note', 'Firma']
             list_pdf[i] = list_pdf[i][0].split(' ')
-            if list_pdf[i][0] != 'Ora':
-                return False
 
             # Remove 'Firma' element if it exists or "..." element if it exists
             if 'Firma' in list_pdf[i]:
@@ -97,10 +123,16 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
 
             # Remove all None elements
             list_pdf[i] = [x for x in list_pdf[i] if x]
+
+            # Check that necessary headers are present
+            if not {'Ora', 'Classe', 'Doc.Assente', 'Sost.1', 'Sost.2', 'Note'}.issubset(set(list_pdf[i])):
+                return False
+
             list_pdf[i].insert(2, 'Aula')
 
             continue
 
+        # Empty row
         if len(row) == 0:
             continue
 
@@ -142,31 +174,77 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
     return True
 
 
-def fix_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
+def pdf_to_csv_new_ui(pdf_path: str, output_path: str, delete_original=True):
     """
-    It takes a PDF file, rotates each page and saves the result to a new PDF file
+    It takes a PDF file, converts it to a CSV file, and saves it to a given path
 
-    :param pdf_path: The path to the PDF file you want to rotate
+    :param pdf_path: The path to the PDF file you want to convert
     :param output_path: The path to the output file
-    :param delete_original: If True, the original PDF will be deleted, defaults to True (optional)
-    :param rotation_degrees: The degrees to rotate the pages, defaults to 270
+    :param delete_original: If True, it deletes the original PDF file
+    :return: True if the conversion was successful, False otherwise
     """
-    with open(pdf_path, 'rb') as pdf_file:
-        # Rotate pages
-        pdf_reader = PyPDF2.PdfFileReader(pdf_file, strict=False)
-        pdf_writer = PyPDF2.PdfFileWriter()
 
-        for page in range(pdf_reader.numPages):
-            page = pdf_reader.getPage(page)
-            page.rotateClockwise(rotation_degrees)
-            pdf_writer.addPage(page)
+    list_pdf = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            table = page.extract_table(table_settings={"text_x_tolerance": 1})
+            list_pdf.extend(table)
 
-        # Save the rotated pages to a new PDF file
-        with open(output_path, 'wb') as new_pdf:
-            pdf_writer.write(new_pdf)
+    firma_index = None
+    for i, row in enumerate(list_pdf):
+        # First row handling
+        if i == 0:
+            # Headers
+            list_pdf[i] = [x.replace('Docente assente', 'Doc.Assente')
+                            .replace('Sostituto 1', 'Sost.1')
+                            .replace('Sostituto 2', 'Sost.2') for x in list_pdf[i]]
+
+            # Remove 'Firma' element if it exists
+            if 'Firma' in list_pdf[i]:
+                firma_index = list_pdf[i].index('Firma')
+                list_pdf[i].remove('Firma')
+
+            # Check that necessary headers are present
+            if not {'Ora', 'Classe', 'Doc.Assente', 'Sost.1', 'Sost.2', 'Note'}.issubset(set(list_pdf[i])):
+                return False
+
+            continue
+
+        # Repeating header
+        if row[0] == 'Ora' or row[1] is None or row[1] == '':
+            list_pdf[i] = []
+            continue
+
+        # Remove 'Firma' element
+        if firma_index is not None:
+            row.pop(firma_index)
+
+        # Ora
+        list_pdf[i][0] = int(list_pdf[i][0])
+
+        # Fix nomi prof
+        list_pdf[i][3] = list_pdf[i][3].split('-')[0].replace('_', ' ')
+        list_pdf[i][4] = list_pdf[i][4].split('-')[0].replace('_', ' ')
+        list_pdf[i][5] = list_pdf[i][5].split('-')[0].replace('_', ' ')
+
+        list_pdf[i][3] = '-' if list_pdf[i][3] == '' else list_pdf[i][3]
+        list_pdf[i][4] = '-' if list_pdf[i][4] == '' else list_pdf[i][4]
+        list_pdf[i][5] = '-' if list_pdf[i][5] == '' else list_pdf[i][5]
+
+        # Fix Note
+        list_pdf[i][7] = list_pdf[i][7].replace('\n', ' ')
+
+    list_pdf = [row for row in list_pdf if len(row) != 0]
+
+    # Write list_pdf to CSV
+    with open(output_path, 'w', newline='', encoding='ISO-8859-1') as f:
+        writer = csv.writer(f)
+        writer.writerows(list_pdf)
 
     if delete_original:
         os.remove(pdf_path)
+
+    return True
 
 
 @to_thread

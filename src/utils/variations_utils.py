@@ -3,7 +3,7 @@ import re
 
 from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
-from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv, read_csv_pandas
+from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv_old_ui, read_csv_pandas, pdf_to_csv_new_ui
 
 
 downloads_path = "data/downloads/"
@@ -31,11 +31,19 @@ async def create_csv_by_pdf(link) -> str:
     # Download PDF & fix it
     await save_PDF(link, pdf_path)
 
-    # Convert PDF to CSV (try with different degrees, incrementing by 90)
-    for i in range(0, 360, 90):
-        fix_pdf(pdf_path, fixed_path, rotation_degrees=i, delete_original=False)
+    # Convert PDF to CSV
+    methods = [pdf_to_csv_new_ui, pdf_to_csv_old_ui]
+    for method in methods:
+        ok = False
 
-        ok = pdf_to_csv(fixed_path, csv_path, delete_original=False)
+        # Try with different rotation, incrementing by 90)
+        for i in range(0, 360, 90):
+            fix_pdf(pdf_path, fixed_path, rotation_degrees=i, delete_original=False)
+
+            ok = method(fixed_path, csv_path, delete_original=False)
+            if ok:
+                break
+
         if ok:
             break
     else:

@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py
+discord.py
 python-dotenv
 beautifulsoup4
 PyPDF2<3.0.0

@@ -61,7 +61,7 @@ def generate_embeds(variations: list[dict], missing: bool = True) -> dict[list[E
         return {class_name: generate_embed(teachers, missing=False) for class_name, teachers in variations}
 
 
-def merge_embeds(*embeds: dict[list[Embed]]) -> dict[list[Embed]]:
+def merge_embeds(*embeds: dict[list[Embed]]) -> dict[str, list[Embed]]:
     """
     It merges the embeds of the same class.
 
@@ -79,7 +79,7 @@ def merge_embeds(*embeds: dict[list[Embed]]) -> dict[list[Embed]]:
     return merged_embeds
 
 
-async def send_embeds(bot, channel, embeds_dict: dict[[list[Embed]]]) -> None:
+async def send_embeds(bot, channel, embeds_dict: dict[str, [list[Embed]]]) -> None:
     """
     It sends the embeds to a specific channel.
 

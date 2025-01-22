@@ -50,7 +50,7 @@ class Variations:
         scoreboard = await self.variations_collection.aggregate([
             {'$unwind': '$variations'},
             {'$group': {'_id': '$variations.class', 'variations': {'$sum': 1}}},
-            {'$match': {'$and': [{'_id': {'$ne': ''}}, {'_id': {'$regex': '^\w{2,10}$'}}]}},
+            {'$match': {'$and': [{'_id': {'$ne': ''}}, {'_id': {'$regex': r'^\w{2,10}$'}}]}},
             {'$sort': {'variations': -1}}
         ]).to_list(None)
 
@@ -86,6 +86,9 @@ class Variations:
 
         for item in scoreboard:
             class_age = item['_id'][0]
+            if not class_age.isdigit():
+                continue
+
             if class_age not in summary.keys():
                 summary[class_age] = item['variations']
             else:

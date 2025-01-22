@@ -161,6 +161,9 @@ def pdf_to_csv_old_ui(pdf_path: str, output_path: str, delete_original=True):
         classroom = classroom[0] if len(classroom) > 0 else ''
         list_pdf[i].insert(2, classroom)
 
+        # Fix prof's names
+        list_pdf[i][3] = list_pdf[i][3].replace('_', ' ')
+
     list_pdf = [row for row in list_pdf if len(row) != 0]
 
     # Write list_pdf to CSV

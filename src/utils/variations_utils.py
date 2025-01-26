@@ -38,6 +38,7 @@ async def create_csv_by_pdf(link) -> str:
 
         # Try with different rotation, incrementing by 90)
         for i in range(0, 360, 90):
+            print(f"Trying method {method.__name__} with rotation {i}")
             fix_pdf(pdf_path, fixed_path, rotation_degrees=i, delete_original=False)
 
             ok = method(fixed_path, csv_path, delete_original=False)

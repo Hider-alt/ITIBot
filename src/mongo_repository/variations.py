@@ -8,7 +8,7 @@ class Variations:
         self.mongo_client = mongo_client
         self.variations_collection = self.mongo_client['ITI'].variations25
 
-    async def save_variations(self, variations: dict[list[dict]]):
+    async def save_variations(self, variations: dict[str, list[dict]]):
         """
         Save the variations to the database
 

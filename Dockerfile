@@ -14,9 +14,6 @@ WORKDIR /app
 # Copia tutti i file del progetto nella directory di lavoro
 COPY . .
 
-# Rendi eseguibile lo script di startup (se necessario)
-RUN chmod +x startup.sh
-
 # Installa le dipendenze Python
 RUN pip install --no-cache-dir -r requirements.txt
 

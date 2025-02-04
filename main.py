@@ -93,9 +93,6 @@ class MyBot(Bot):
 
 
 async def main():
-    # Disable OCR lib logging
-    logging.getLogger().setLevel(logging.CRITICAL)
-
     # Heartbeat
     asyncio.create_task(start_health_check())
 

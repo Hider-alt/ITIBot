@@ -3,7 +3,7 @@ from src.utils.discord_utils import generate_embeds, send_embeds, merge_embeds
 from src.utils.pdf_utils import ConversionException
 from src.utils.plots import generate_plots
 from src.utils.utils import clear_folder
-from src.utils.variations_utils import create_csv_by_pdf, fetch_variations_json, get_new_variations, merge_variations, \
+from src.utils.variations_utils import create_csv_from_pdf, fetch_variations_json, get_new_variations, merge_variations, \
     save_variations
 
 
@@ -25,7 +25,7 @@ async def refresh_variations(bot):
         print(f"Fetching {link}")
 
         try:
-            csv_conversion = await create_csv_by_pdf(link)
+            csv_conversion = await create_csv_from_pdf(link)
             ocr = ocr or csv_conversion[1]
         except ConversionException as e:
             print(f"Error in conversion from PDF to CSV for {link}: {e}")

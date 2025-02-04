@@ -55,6 +55,7 @@ def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
 
             if col in [3, 4, 5] and row != 0:
                 text = text.split('-')[0].replace('_', ' ')
+                text = '-' if text == '' else text
 
             # Print if OCR not respect pattern nXXX or nX
             if col == 1 and row != 0 and not re.match(r'\d{1,3}[A-Z]?', text):

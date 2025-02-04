@@ -13,7 +13,7 @@ from src.utils.utils import read_csv_pandas
 downloads_path = "data/downloads/"
 
 
-async def create_csv_by_pdf(link) -> tuple[str, bool]:
+async def create_csv_from_pdf(link) -> tuple[str, bool]:
     """
     It takes a link to a PDF file, downloads it, fixes it, converts it to a CSV file, and saves it to a given path
 
@@ -21,7 +21,7 @@ async def create_csv_by_pdf(link) -> tuple[str, bool]:
     :return: Returns a tuple with the path to the CSV file and whether OCR was used
     """
 
-    # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year> (in italian)
+    # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year>
     filename = link.split('/')[-1][:-4].lower()
     date = re.search(r'\d+-\w+', filename).group(0)
     date = parse_italian_date(date)

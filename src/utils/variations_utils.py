@@ -1,20 +1,24 @@
 import datetime
 import re
 
+from src.commands.loops.variations.methods.new_ui import pdf_to_csv as new_ui
+from src.commands.loops.variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
+from src.commands.loops.variations.methods.old_ui import pdf_to_csv as old_ui
+from src.commands.loops.variations.pdf_downloader import save_PDF
 from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
-from src.utils.pdf_utils import save_PDF, fix_pdf, pdf_to_csv_old_ui, read_csv_pandas, pdf_to_csv_new_ui
-
+from src.utils.pdf_utils import rotate_pdf, ConversionException
+from src.utils.utils import read_csv_pandas
 
 downloads_path = "data/downloads/"
 
 
-async def create_csv_by_pdf(link) -> str:
+async def create_csv_by_pdf(link) -> tuple[str, bool]:
     """
     It takes a link to a PDF file, downloads it, fixes it, converts it to a CSV file, and saves it to a given path
 
     :param link: The link to the PDF file
-    :return: The path to the CSV file
+    :return: Returns a tuple with the path to the CSV file and whether OCR was used
     """
 
     # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year> (in italian)
@@ -25,32 +29,34 @@ async def create_csv_by_pdf(link) -> str:
 
     # Compose paths
     pdf_path = downloads_path + filename + ".pdf"
-    fixed_path = downloads_path + filename + "_fixed.pdf"
+    rotated_path = downloads_path + filename + "_rotated.pdf"
     csv_path = downloads_path + filename + ".csv"
 
     # Download PDF & fix it
     await save_PDF(link, pdf_path)
 
     # Convert PDF to CSV
-    methods = [pdf_to_csv_new_ui, pdf_to_csv_old_ui]
-    for method in methods:
+    method_used = None
+    methods = [new_ui, old_ui, new_ui_ocr]   # Add OCR methods at the end
+    for i, method in enumerate(methods):
         ok = False
 
         # Try with different rotation, incrementing by 90)
-        for i in range(0, 360, 90):
-            print(f"Trying method {method.__name__} with rotation {i}")
-            fix_pdf(pdf_path, fixed_path, rotation_degrees=i, delete_original=False)
+        for j in range(0, 360, 90):
+            print(f"Trying method {i} with rotation {j}")
+            rotate_pdf(pdf_path, rotated_path, rotation_degrees=j, delete_original=False)
 
-            ok = method(fixed_path, csv_path, delete_original=False)
+            ok = await method(rotated_path, csv_path, delete_original=False)
             if ok:
+                method_used = i
                 break
 
         if ok:
             break
     else:
-        raise Exception("Error while converting PDF to CSV")
+        raise ConversionException("Error while converting PDF to CSV")
 
-    return csv_path
+    return csv_path, method_used >= 2
 
 
 async def fetch_variations_json(csv_path) -> dict:

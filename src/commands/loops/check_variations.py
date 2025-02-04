@@ -1,5 +1,6 @@
+from src.commands.loops.variations.pdf_downloader import get_variations_links
 from src.utils.discord_utils import generate_embeds, send_embeds, merge_embeds
-from src.utils.pdf_utils import get_variations_links
+from src.utils.pdf_utils import ConversionException
 from src.utils.plots import generate_plots
 from src.utils.utils import clear_folder
 from src.utils.variations_utils import create_csv_by_pdf, fetch_variations_json, get_new_variations, merge_variations, \
@@ -12,15 +13,25 @@ async def refresh_variations(bot):
 
     :param bot: Discord bot
     """
+
+    ocr = False
     clear_folder('data/downloads/')
+
     links = await get_variations_links()
     print(links)
 
     new = []
     for link in links:
         print(f"Fetching {link}")
-        csv_path = await create_csv_by_pdf(link)
-        new.append(await fetch_variations_json(csv_path))
+
+        try:
+            csv_conversion = await create_csv_by_pdf(link)
+            ocr = ocr or csv_conversion[1]
+        except ConversionException as e:
+            print(f"Error in conversion from PDF to CSV for {link}: {e}")
+            continue
+
+        new.append(await fetch_variations_json(csv_conversion[0]))
 
     new = merge_variations(new)
     missing_teachers, returned_teachers = await get_new_variations(bot.mongo_client, new)
@@ -35,5 +46,5 @@ async def refresh_variations(bot):
         print("No changes")
         return
 
-    await send_embeds(bot, bot.log_channel, merged_embeds)
+    await send_embeds(bot, bot.log_channel, merged_embeds, ocr=ocr)
     await generate_plots(bot.mongo_client)

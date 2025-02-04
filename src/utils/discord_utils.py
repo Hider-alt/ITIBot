@@ -41,7 +41,7 @@ def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
     return embeds
 
 
-def generate_embeds(variations: list[dict], missing: bool = True) -> dict[list[Embed]]:
+def generate_embeds(variations: list[dict], missing: bool = True) -> dict[str, list[Embed]]:
     """
     It generates an embed with the missing/returned teachers.
 
@@ -61,7 +61,7 @@ def generate_embeds(variations: list[dict], missing: bool = True) -> dict[list[E
         return {class_name: generate_embed(teachers, missing=False) for class_name, teachers in variations}
 
 
-def merge_embeds(*embeds: dict[list[Embed]]) -> dict[str, list[Embed]]:
+def merge_embeds(*embeds: dict[str, list[Embed]]) -> dict[str, list[Embed]]:
     """
     It merges the embeds of the same class.
 
@@ -79,13 +79,14 @@ def merge_embeds(*embeds: dict[list[Embed]]) -> dict[str, list[Embed]]:
     return merged_embeds
 
 
-async def send_embeds(bot, channel, embeds_dict: dict[str, [list[Embed]]]) -> None:
+async def send_embeds(bot, channel, embeds_dict: dict[str, list[Embed]], ocr: bool = False) -> None:
     """
     It sends the embeds to a specific channel.
 
     :param bot: Discord bot
     :param channel: The channel to send the embeds to
     :param embeds_dict: The embeds to send (Structured as in generate_embeds())
+    :param ocr: Whether the PDF was converted using OCR
     :return: None
     """
     guild = bot.school_guild
@@ -104,7 +105,11 @@ async def send_embeds(bot, channel, embeds_dict: dict[str, [list[Embed]]]) -> No
             continue
 
         # Send in global channel
-        embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
+        if ocr:
+            embeds = [embed.set_footer(text="Le variazioni sono state lette tramite OCR, quindi potrebbero esserci errori") for embed in embeds]
+        else:
+            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
+
         await channel.send(content=f"Classe: **{role.name}**", embeds=embeds)
 
         # Send in class channel

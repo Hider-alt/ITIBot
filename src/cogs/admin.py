@@ -2,7 +2,7 @@ from discord import app_commands, Embed, Color
 from discord.ext.commands import Cog
 
 from src.commands.analytics import AnalyticsView
-from src.commands.loops.check_teachers import refresh_variations
+from src.commands.loops.check_variations import refresh_variations
 from src.commands.roles import add_roles, upgrade_class
 from src.utils.plots import generate_plots
 

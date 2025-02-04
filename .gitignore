@@ -154,3 +154,4 @@ data/plots/teachers/*
 
 # Exclude .gitkeep files
 !.gitkeep
+/data/tmp-ocr/

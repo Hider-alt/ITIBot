@@ -4,7 +4,7 @@ import pytz
 from discord.ext import tasks
 from discord.ext.commands import Cog
 
-from src.commands.loops.check_teachers import refresh_variations
+from src.commands.loops.check_variations import refresh_variations
 
 
 async def setup(bot):

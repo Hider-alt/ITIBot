@@ -1,18 +1,14 @@
 import asyncio
 import json
 import logging
-import sys
 import os
-import threading
-import uvicorn
+import sys
 
 import motor.motor_asyncio as motor
-
-from dotenv import load_dotenv
-from fastapi import FastAPI
-
 from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
+from dotenv import load_dotenv
+from fastapi import FastAPI
 from uvicorn import Config, Server
 
 from src.commands.analytics import AnalyticsView
@@ -97,6 +93,9 @@ class MyBot(Bot):
 
 
 async def main():
+    # Disable OCR lib logging
+    logging.getLogger().setLevel(logging.CRITICAL)
+
     # Heartbeat
     asyncio.create_task(start_health_check())
 

@@ -14,4 +14,3 @@ uvicorn
 fastapi
 paddlepaddle
 paddleocr
-opencv-python-headless

@@ -1,25 +1,23 @@
 import datetime
 import re
 
-from src.commands.loops.variations.methods.new_ui import pdf_to_csv as new_ui
-from src.commands.loops.variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
-from src.commands.loops.variations.methods.old_ui import pdf_to_csv as old_ui
 from src.commands.loops.variations.pdf_downloader import save_PDF
 from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
 from src.utils.pdf_utils import rotate_pdf, ConversionException
 from src.utils.utils import read_csv_pandas
 
-downloads_path = "data/downloads/"
 
-
-async def create_csv_from_pdf(link) -> tuple[str, bool]:
+async def create_csv_from_pdf(link, methods: list) -> str:
     """
     It takes a link to a PDF file, downloads it, fixes it, converts it to a CSV file, and saves it to a given path
 
     :param link: The link to the PDF file
-    :return: Returns a tuple with the path to the CSV file and whether OCR was used
+    :param methods: The methods to convert the PDF to CSV
+    :return: Returns the path to the CSV file
     """
+
+    downloads_path = "data/downloads/"
 
     # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year>
     filename = link.split('/')[-1][:-4].lower()
@@ -36,8 +34,6 @@ async def create_csv_from_pdf(link) -> tuple[str, bool]:
     await save_PDF(link, pdf_path)
 
     # Convert PDF to CSV
-    method_used = None
-    methods = [new_ui, old_ui, new_ui_ocr]   # Add OCR methods at the end
     for i, method in enumerate(methods):
         ok = False
 
@@ -47,8 +43,8 @@ async def create_csv_from_pdf(link) -> tuple[str, bool]:
             rotate_pdf(pdf_path, rotated_path, rotation_degrees=j, delete_original=False)
 
             ok = await method(rotated_path, csv_path, delete_original=False)
+
             if ok:
-                method_used = i
                 break
 
         if ok:
@@ -56,7 +52,7 @@ async def create_csv_from_pdf(link) -> tuple[str, bool]:
     else:
         raise ConversionException("Error while converting PDF to CSV")
 
-    return csv_path, method_used >= 2
+    return csv_path
 
 
 async def fetch_variations_json(csv_path) -> dict:

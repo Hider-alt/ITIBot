@@ -17,7 +17,7 @@ def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
     table = defaultdict(default_nested_dict)
 
     page_nr = int(pdf_path.split('-')[-1].split('.')[0])
-    ocr = PaddleOCR(lang="it", use_angle_cls=False, ocr_model_dir='data/ocr_models')
+    ocr = PaddleOCR(lang="it", use_angle_cls=False, rec_model_dir=r"data/ocr_models/rec/", det_model_dir="data/ocr_models/det/")
 
     with pdfplumber.open(pdf_path) as pdf:
         page = pdf.pages[0]

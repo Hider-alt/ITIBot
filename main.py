@@ -11,11 +11,15 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from uvicorn import Config, Server
 
+from run_ocr import run_ocr
 from src.commands.analytics import AnalyticsView
 from src.commands.roles import SelectRoleView
 from src.utils.plots import generate_plots
 
-load_dotenv()
+if len(sys.argv) > 1 and sys.argv[1] == "ocr":
+    load_dotenv("ocr.env")
+else:
+    load_dotenv()
 
 
 # Configure health check on port 8000
@@ -36,7 +40,7 @@ async def start_health_check():
     await server.serve()
 
 
-class MyBot(Bot):
+class ITIBot(Bot):
     """Subclassing Discord bot class"""
 
     def __init__(self, **options):
@@ -59,22 +63,22 @@ class MyBot(Bot):
         self.select_channel = await self.fetch_channel(self.select_channel)
         self.analytics_channel = await self.fetch_channel(self.analytics_channel)
 
-        # Load persistent roles
-        with open("data/config.json", "r") as f:
-            config = json.load(f)
-
-        self.add_view(SelectRoleView(config["classes"]))
-
         # Load cogs
-        for file in os.listdir("src//cogs"):
-            if file.endswith(".py"):
-                await self.load_extension('src.cogs.' + file[:-3])
+        if len(sys.argv) <= 1 or sys.argv[1] != "ocr":
+            for file in os.listdir("src//cogs"):
+                if file.endswith(".py"):
+                    await self.load_extension('src.cogs.' + file[:-3])
 
         # Connect to MongoDB
         self.mongo_client = motor.AsyncIOMotorClient(os.environ['MONGO_URL'])
 
-        # Load persistent analytics
-        self.add_view(AnalyticsView(self.mongo_client))
+        # Load persistent roles & analytics
+        with open("data/config.json", "r") as f:
+            config = json.load(f)
+
+        if len(sys.argv) <= 1 or sys.argv[1] != "ocr":
+            self.add_view(SelectRoleView(config["classes"]))
+            self.add_view(AnalyticsView(self.mongo_client))
 
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
@@ -91,6 +95,13 @@ class MyBot(Bot):
 
         await generate_plots(self.mongo_client)
 
+        if len(sys.argv) > 1 and sys.argv[1] == "ocr":
+            print("Running OCR mode")
+
+            await run_ocr(self)
+
+            await self.close()
+
 
 async def main():
     # Heartbeat
@@ -100,7 +111,7 @@ async def main():
     intents = Intents.default()
     intents.message_content = True
     intents.members = True
-    bot = MyBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
+    bot = ITIBot(command_prefix='!', description="ITI Blaise Pascal Discord Bot", intents=intents)
 
     async with bot:
         try:

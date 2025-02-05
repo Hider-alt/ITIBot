@@ -6,11 +6,12 @@ from copy import deepcopy
 from typing import Any
 
 import pdfplumber
+from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
 from paddleocr import PaddleOCR
 
 from src.utils.pdf_utils import write_rows_to_csv
-from src.utils.utils import default_nested_dict, to_thread, clear_folder
+from src.utils.utils import default_nested_dict, to_thread
 
 
 def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
@@ -36,6 +37,18 @@ def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
             # Save image to data/downloads/tmp-ocr
             img_path = f'data/tmp-ocr/tmp-{page_nr}-{j}.png'
             img.save(img_path)
+
+            # Add 50px on each side
+            img = Image.open(img_path)
+            width, height = img.size
+
+            new_width = width + 100
+            new_height = height + 100
+
+            new_img = Image.new("RGB", (new_width, new_height), "white")
+
+            new_img.paste(img, (50, 50))
+            new_img.save(img_path)
 
             row = j % page_rows
             col = j // page_rows
@@ -95,7 +108,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
     with ProcessPoolExecutor() as executor:
         tables = list(executor.map(process_page, pdfs))
 
-    clear_folder('data/tmp-ocr')
+    # clear_folder('data/tmp-ocr')
 
     if tables[0][0][0] != 'Ora' and tables[0][0][1] != 'Classe':
         return False

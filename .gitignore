@@ -157,3 +157,4 @@ data/plots/teachers/*
 /data/tmp-ocr/
 /ocr.env
 /data/ocr_models/
+/run_ocr.py

@@ -12,7 +12,7 @@ class ConversionException(Exception):
 
 def rotate_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
     """
-    It takes a PDF file, rotates each page and saves the result to a new PDF file
+    It takes a PDF file, rotates (anti-clockwise) each page and saves the result to a new PDF file
 
     :param pdf_path: The path to the PDF file you want to rotate
     :param output_path: The path to the output file
@@ -25,7 +25,7 @@ def rotate_pdf(pdf_path: str, output_path: str, delete_original: bool = True, ro
         pdf_writer = PdfWriter()
 
         for page in pdf_reader.pages:
-            page.rotate(rotation_degrees)
+            page.rotate(-rotation_degrees)
             pdf_writer.add_page(page)
 
         # Save the rotated pages to a new PDF file

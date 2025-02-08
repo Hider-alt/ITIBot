@@ -10,5 +10,5 @@ pandas
 matplotlib
 numpy<2.0.0
 aiohttp
-uvicorn
-fastapi
+paddlepaddle
+paddleocr

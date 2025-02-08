@@ -8,37 +8,12 @@ import motor.motor_asyncio as motor
 from discord import Intents, Object, LoginFailure, Activity, ActivityType
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from uvicorn import Config, Server
 
-from run_ocr import run_ocr
 from src.commands.analytics import AnalyticsView
 from src.commands.roles import SelectRoleView
 from src.utils.plots import generate_plots
 
 load_dotenv()
-
-if len(sys.argv) > 1 and sys.argv[1] == "ocr":
-    # Change env var "prod" to true
-    os.environ['PROD'] = 'true'
-
-
-# Configure health check on port 8000
-app = FastAPI()
-
-
-@app.get("/")
-async def health_check():
-    return {"status": "ok"}
-
-
-async def start_health_check():
-    """Start the FastAPI server."""
-    config = Config(app=app, host="0.0.0.0", port=8000, log_level="info")
-    server = Server(config)
-
-    print("Health check started")
-    await server.serve()
 
 
 class ITIBot(Bot):
@@ -96,18 +71,8 @@ class ITIBot(Bot):
 
         await generate_plots(self.mongo_client)
 
-        if len(sys.argv) > 1 and sys.argv[1] == "ocr":
-            print("Running OCR mode")
-
-            await run_ocr(self)
-
-            await self.close()
-
 
 async def main():
-    # Heartbeat
-    asyncio.create_task(start_health_check())
-
     # Discord
     intents = Intents.default()
     intents.message_content = True

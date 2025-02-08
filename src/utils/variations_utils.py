@@ -45,6 +45,7 @@ async def create_csv_from_pdf(link, methods: list) -> str:
             ok = await method(rotated_path, csv_path, delete_original=False)
 
             if ok:
+                print(f"Method {i} with rotation {j} successful")
                 break
 
         if ok:

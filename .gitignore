@@ -155,6 +155,4 @@ data/plots/teachers/*
 # Exclude .gitkeep files
 !.gitkeep
 /data/tmp-ocr/
-/ocr.env
 /data/ocr_models/
-/run_ocr.py

@@ -16,10 +16,11 @@ from src.commands.analytics import AnalyticsView
 from src.commands.roles import SelectRoleView
 from src.utils.plots import generate_plots
 
+load_dotenv()
+
 if len(sys.argv) > 1 and sys.argv[1] == "ocr":
-    load_dotenv("ocr.env")
-else:
-    load_dotenv()
+    # Change env var "prod" to true
+    os.environ['PROD'] = 'true'
 
 
 # Configure health check on port 8000
@@ -115,7 +116,7 @@ async def main():
 
     async with bot:
         try:
-            logging.basicConfig(level=logging.WARNING)
+            logging.basicConfig(level=logging.ERROR)
             await bot.start(os.environ['DISCORD'])
         except LoginFailure as e:
             print("\n\nERROR: Discord Token not valid (" + str(e) + ")\n\n")

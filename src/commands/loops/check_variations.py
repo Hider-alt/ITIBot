@@ -1,4 +1,6 @@
+from src.commands.loops.variations.methods.new_ui import pdf_to_csv as new_ui
 from src.commands.loops.variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
+from src.commands.loops.variations.methods.old_ui import pdf_to_csv as old_ui
 from src.commands.loops.variations.pdf_downloader import get_variations_links
 from src.utils.discord_utils import generate_embeds, send_embeds, merge_embeds
 from src.utils.pdf_utils import ConversionException
@@ -25,15 +27,12 @@ async def refresh_variations(bot):
         print(f"Fetching {link}")
 
         try:
-            csv_conversion = await create_csv_from_pdf(link, [new_ui_ocr]) # [new_ui, old_ui, new_ui_ocr]) TODO
+            csv_conversion = await create_csv_from_pdf(link, [new_ui, old_ui, new_ui_ocr])
         except ConversionException as e:
             print(f"Error in conversion from PDF to CSV for {link}: {e}")
             continue
 
         new.append(await fetch_variations_json(csv_conversion))
-
-    print(new)
-    return
 
     new = merge_variations(new)
     missing_teachers, returned_teachers = await get_new_variations(bot.mongo_client, new)

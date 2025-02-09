@@ -108,7 +108,10 @@ async def send_embeds(bot, channel, embeds_dict: dict[str, list[Embed]], ocr: bo
         if ocr:
             embeds = [embed.set_footer(text="Le variazioni sono state lette tramite OCR, quindi potrebbero esserci errori") for embed in embeds]
         else:
-            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=owner.display_name) for embed in embeds]
+            roman_id = 865938848362266644
+            roman = bot.get_user(roman_id) or {'display_name': 'Roman'}
+
+            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=f"Dev: {owner.display_name} | Hosting offered by {roman.display_name}") for embed in embeds]
 
         await channel.send(content=f"Classe: **{role.name}**", embeds=embeds)
 

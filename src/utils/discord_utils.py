@@ -111,7 +111,7 @@ async def send_embeds(bot, channel, embeds_dict: dict[str, list[Embed]], ocr: bo
             roman_id = 865938848362266644
             roman = bot.get_user(roman_id) or {'display_name': 'Roman'}
 
-            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=f"Dev: {owner.display_name} | Hosting offered by {roman.display_name}") for embed in embeds]
+            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=f"Dev: {owner.display_name} | Hosting offerto da {roman.display_name}") for embed in embeds]
 
         await channel.send(content=f"Classe: **{role.name}**", embeds=embeds)
 

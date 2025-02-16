@@ -11,6 +11,9 @@ def parse_italian_date(date: str) -> datetime:
     # Get day, month and year
     day, month = date.split('-')
 
+    # Tomorrow
+    tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
+
     # Get month
     month = {
         'gennaio': 1,
@@ -25,7 +28,7 @@ def parse_italian_date(date: str) -> datetime:
         'ottobre': 10,
         'novembre': 11,
         'dicembre': 12,
-    }[month]
+    }.get(month, tomorrow.month)
 
     # Create datetime object
     date = datetime.datetime(year=datetime.datetime.now().year, month=month, day=int(day))

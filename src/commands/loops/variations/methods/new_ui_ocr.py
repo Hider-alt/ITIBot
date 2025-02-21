@@ -11,7 +11,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from paddleocr import PaddleOCR
 
 from src.utils.pdf_utils import write_rows_to_csv
-from src.utils.utils import default_nested_dict, to_thread
+from src.utils.utils import default_nested_dict, to_thread, clear_folder
 
 
 def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
@@ -108,7 +108,7 @@ def pdf_to_csv(pdf_path: str, output_path: str, delete_original=True):
     with ProcessPoolExecutor() as executor:
         tables = list(executor.map(process_page, pdfs))
 
-    # clear_folder('data/tmp-ocr')
+    clear_folder('data/tmp-ocr')
 
     if tables[0][0][0] != 'Ora' and tables[0][0][1] != 'Classe':
         return False

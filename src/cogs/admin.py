@@ -1,10 +1,10 @@
 from discord import app_commands, Embed, Color
 from discord.ext.commands import Cog
 
-from src.commands.analytics import AnalyticsView
+from src.commands.analytics.analytics import AnalyticsView
+from src.commands.analytics.plots import generate_plots
 from src.commands.loops.check_variations import refresh_variations
 from src.commands.roles import add_roles, upgrade_class
-from src.utils.plots import generate_plots
 
 
 async def setup(bot):
@@ -15,6 +15,7 @@ class Admin(Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @app_commands.command(name="ruoli", description="ADMIN ONLY")
     @app_commands.command(name="invia_statistiche", description="ADMIN ONLY")
     @app_commands.describe(start_date="Data di inizio delle statistiche")
     @app_commands.checks.has_permissions(administrator=True)

@@ -10,8 +10,9 @@ from PIL import Image
 from PyPDF2 import PdfReader, PdfWriter
 from paddleocr import PaddleOCR
 
+from src.utils.os_utils import clear_folder
 from src.utils.pdf_utils import write_rows_to_csv
-from src.utils.utils import default_nested_dict, to_thread, clear_folder
+from src.utils.utils import default_nested_dict, to_thread
 
 
 def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:

@@ -5,7 +5,6 @@ from discord import ui, ButtonStyle, Embed, Color, SelectOption
 
 from src.mongo_repository.variations import Variations
 
-
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
 months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 

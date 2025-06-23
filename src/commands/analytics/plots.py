@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from src.mongo_repository.variations import Variations
 import matplotlib.pyplot as plt
 
-from src.utils.utils import clear_folder
-
+from src.mongo_repository.variations import Variations
+from src.utils.os_utils import clear_folder
 
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
 months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]

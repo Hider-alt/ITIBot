@@ -130,7 +130,7 @@ async def create_channels(client, classes: list[list[str]]):
 
     # Delete all channels that start with "variazioni-orario-" and are not in the list of classes already created
     for channel in await client.school_guild.fetch_channels():
-        if channel.name.startswith("variazioni-orario-") and channel.name[18:] not in classes_names:  # 18 = len("variazioni-orario-")
+        if channel.name.startswith("variazioni-orario-") and channel.name[len("variazioni-orario-"):] not in classes_names:
             print(f"Deleting channel {channel.name}")
             await channel.delete(reason="Channel already exists")
 

@@ -1,11 +1,11 @@
 import datetime
 import re
 
-from src.commands.loops.variations.pdf_downloader import save_PDF
+from src.commands.loops.variations.pdf_downloader import download_and_save_PDF
 from src.mongo_repository.variations import Variations
 from src.utils.datetime_utils import parse_italian_date
+from src.utils.pandas_utils import read_csv
 from src.utils.pdf_utils import rotate_pdf, ConversionException
-from src.utils.utils import read_csv_pandas
 
 
 async def create_csv_from_pdf(link, methods: list) -> str:
@@ -31,7 +31,7 @@ async def create_csv_from_pdf(link, methods: list) -> str:
     csv_path = downloads_path + filename + ".csv"
 
     # Download PDF & fix it
-    await save_PDF(link, pdf_path)
+    await download_and_save_PDF(link, pdf_path)
 
     # Convert PDF to CSV
     for i, method in enumerate(methods):
@@ -64,7 +64,7 @@ async def fetch_variations_json(csv_path) -> dict:
     """
 
     date = datetime.datetime.strptime(csv_path.split('/')[-1][:-4], '%d-%m-%Y')
-    csv = await read_csv_pandas(csv_path)
+    csv = await read_csv(csv_path)
 
     # Replace NaN with empty string
     csv = csv.fillna('')

@@ -1,11 +1,11 @@
+from src.commands.analytics.plots import generate_plots
 from src.commands.loops.variations.methods.new_ui import pdf_to_csv as new_ui
 from src.commands.loops.variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
 from src.commands.loops.variations.methods.old_ui import pdf_to_csv as old_ui
 from src.commands.loops.variations.pdf_downloader import get_variations_links
 from src.utils.discord_utils import generate_embeds, send_embeds, merge_embeds
+from src.utils.os_utils import clear_folder
 from src.utils.pdf_utils import ConversionException
-from src.utils.plots import generate_plots
-from src.utils.utils import clear_folder
 from src.utils.variations_utils import create_csv_from_pdf, fetch_variations_json, get_new_variations, merge_variations, \
     save_variations
 

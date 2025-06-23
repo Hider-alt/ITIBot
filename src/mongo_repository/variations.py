@@ -61,12 +61,12 @@ class Variations:
         Get the variations for the given class age. Example: class_age = 4, returns the variations for all classes in the 4th grade (4A, 4B, 4C, 4D, 4E, 4F)
 
         :param class_age: The class age to get the variations for
-        :return:
+        :return: The variations for the given class age
         """
 
         scoreboard = await self.variations_collection.aggregate([
             {'$unwind': '$variations'},
-            {'$match': {'variations.class': {'$regex': f'^{class_age}'}}},
+            {'$match': {'variations.class': {'$regex': f'^{class_age}[A-Z]+'}}},
             {'$group': {'_id': '$variations.class', 'variations': {'$sum': 1}}},
             {'$sort': {'variations': -1}}
         ]).to_list(None)
@@ -238,7 +238,6 @@ class Variations:
                 scoreboard[weekday] = scoreboard[weekday] / documents_count[weekday]
 
         return scoreboard
-
 
     async def get_hourly_stats(self) -> dict:
         """

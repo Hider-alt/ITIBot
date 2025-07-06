@@ -55,7 +55,7 @@ def process_page(pdf_path) -> defaultdict[Any, defaultdict[Any, None]]:
             col = j // page_rows
 
             # OCR
-            ocr_res = ocr.ocr(img_path, det=True, rec=True, cls=False, bin=True)
+            ocr_res = ocr.ocr(img_path, cls=False, bin=True)
             text = ocr_res[0][0][1][0] if ocr_res[0] else '-'
 
             # Print if % of confidence is low

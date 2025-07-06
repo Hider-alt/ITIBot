@@ -21,7 +21,7 @@ def rotate_pdf(pdf_path: str, output_path: str, delete_original: bool = True, ro
     """
     with open(pdf_path, 'rb') as pdf_file:
         # Rotate pages
-        pdf_reader = PdfReader(pdf_file, strict=False)
+        pdf_reader = PdfReader(pdf_file)
         pdf_writer = PdfWriter()
 
         for page in pdf_reader.pages:

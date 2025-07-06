@@ -24,7 +24,6 @@ def parse_italian_date(date: str) -> datetime:
     :param date: The string containing the date in italian
     :returns: The date in datetime format
     """
-    global months
 
     # Get day, month and year
     day, month_str = date.split('-')

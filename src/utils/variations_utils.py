@@ -1,18 +1,18 @@
 import datetime
 import re
 
-from src.commands.loops.variations.pdf_downloader import download_and_save_PDF
-from src.mongo_repository.variations import Variations
+from src.api.iti.variations import VariationsAPI
+from src.mongo_repository.variations_db import VariationsDB
 from src.utils.datetime_utils import parse_italian_date
 from src.utils.pandas_utils import read_csv
 from src.utils.pdf_utils import rotate_pdf, ConversionException
 
 
-async def create_csv_from_pdf(link, methods: list) -> str:
+async def create_csv_from_pdf(url, methods: list) -> str:
     """
     It takes a link to a PDF file, downloads it, fixes it, converts it to a CSV file, and saves it to a given path
 
-    :param link: The link to the PDF file
+    :param url: The link to the PDF file
     :param methods: The methods to convert the PDF to CSV
     :return: Returns the path to the CSV file
     """
@@ -20,8 +20,8 @@ async def create_csv_from_pdf(link, methods: list) -> str:
     downloads_path = "data/downloads/"
 
     # Find <day (int)>-<month (str)> in the filename (with regex), then save <weekday>-<day>-<month>-<year>
-    filename = link.split('/')[-1][:-4].lower()
-    date = re.search(r'\d+-\w+', filename).group(0)
+    filename = url.split('/')[-1][:-4].lower()
+    date = re.search(r'\d+-\w+', filename).group(0)   # TODO: check
     date = parse_italian_date(date)
     filename = datetime.datetime.strftime(date, '%d-%m-%Y')
 
@@ -31,7 +31,7 @@ async def create_csv_from_pdf(link, methods: list) -> str:
     csv_path = downloads_path + filename + ".csv"
 
     # Download PDF & fix it
-    await download_and_save_PDF(link, pdf_path)
+    await VariationsAPI.download_variation_pdf(url, pdf_path)
 
     # Convert PDF to CSV
     for i, method in enumerate(methods):
@@ -58,7 +58,7 @@ async def create_csv_from_pdf(link, methods: list) -> str:
 
 async def fetch_variations_json(csv_path) -> dict:
     """
-    It updates the teachers in the database with the variations from the given CSV file.
+    It updates the teachers in the database with the check_variations from the given CSV file.
 
     :param csv_path: The path to the CSV file
     """
@@ -74,10 +74,10 @@ async def fetch_variations_json(csv_path) -> dict:
 
 def create_variations_dict(df, date: datetime) -> dict:
     """
-    It creates a dictionary with the variations from the given CSV file.
+    It creates a dictionary with the check_variations from the given CSV file.
 
     :param df: The CSV file
-    :param date: The date of the variations
+    :param date: The date of the check_variations
     """
 
     date = datetime.datetime.strftime(date, '%d-%m-%Y')
@@ -100,9 +100,9 @@ def create_variations_dict(df, date: datetime) -> dict:
 
 def merge_variations(variations: list[dict]) -> dict:
     """
-    It merges the variations from different days into a single dictionary.
+    It merges the check_variations from different days into a single dictionary.
 
-    :param variations: The list of variations to merge
+    :param variations: The list of check_variations to merge
     :return: The merged dictionary
     """
 
@@ -120,14 +120,14 @@ def merge_variations(variations: list[dict]) -> dict:
 
 async def get_new_variations(mongo_client, new: dict) -> tuple[list, list]:
     """
-    It compares the old and the new variations and returns the differences.
+    It compares the old and the new check_variations and returns the differences.
 
-    :param new: The variations fetched from the PDF files
+    :param new: The check_variations fetched from the PDF files
     :param mongo_client: The MongoDB client
 
     :return: The first list contains all teachers that are missing, the second list contains all teachers that are not missing anymore.
     """
-    db = Variations(mongo_client)
+    db = VariationsDB(mongo_client)
 
     teachers_missing = []
     teachers_returned = []
@@ -137,7 +137,7 @@ async def get_new_variations(mongo_client, new: dict) -> tuple[list, list]:
     for date, variations in new.items():
         old = await db.get_variations_by_date(date)
         if not old:
-            # Add all variations
+            # Add all check_variations
             teachers_missing.extend(variations)
         else:
             for variation in variations:
@@ -157,11 +157,11 @@ async def get_new_variations(mongo_client, new: dict) -> tuple[list, list]:
 
 async def save_variations(mongo_client, variations: dict):
     """
-    It saves the variations to the database.
+    It saves the check_variations to the database.
 
-    :param variations: The variations to save
+    :param variations: The check_variations to save
     :param mongo_client: The MongoDB client
     """
 
-    db = Variations(mongo_client)
+    db = VariationsDB(mongo_client)
     await db.save_variations(variations)

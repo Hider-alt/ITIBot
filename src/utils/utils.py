@@ -4,7 +4,7 @@ import typing
 from collections import defaultdict
 
 
-def default_nested_dict():
+def default_nested_dict():   # todo remove
     return defaultdict(str)
 
 

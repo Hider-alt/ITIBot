@@ -1,8 +1,8 @@
+from src.api.iti.variations import VariationsAPI
 from src.commands.analytics.plots import generate_plots
-from src.commands.loops.variations.methods.new_ui import pdf_to_csv as new_ui
-from src.commands.loops.variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
-from src.commands.loops.variations.methods.old_ui import pdf_to_csv as old_ui
-from src.commands.loops.variations.pdf_downloader import get_variations_links
+from src.commands.loops.check_variations.methods.new_ui import pdf_to_csv as new_ui
+from src.commands.loops.check_variations.methods.new_ui_ocr import pdf_to_csv as new_ui_ocr
+from src.commands.loops.check_variations.methods.old_ui import pdf_to_csv as old_ui
 from src.utils.discord_utils import generate_embeds, send_embeds, merge_embeds
 from src.utils.os_utils import clear_folder
 from src.utils.pdf_utils import ConversionException
@@ -12,14 +12,14 @@ from src.utils.variations_utils import create_csv_from_pdf, fetch_variations_jso
 
 async def refresh_variations(bot):
     """
-    It checks for new variations and sends them to the log channel
+    It checks for new check_variations and sends them to the log channel
 
     :param bot: Discord bot
     """
 
     clear_folder('data/downloads/')
 
-    links = await get_variations_links()
+    links = await VariationsAPI.get_variations_links()
     print(links)
 
     new = []

@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 import sys
@@ -11,7 +10,8 @@ from dotenv import load_dotenv
 
 from src.commands.analytics.analytics import AnalyticsView
 from src.commands.analytics.plots import generate_plots
-from src.commands.roles import SelectRoleView
+from src.commands.loops.new_year.ui.select_class_view import SelectClassView
+from src.mongo_repository.config_db import ConfigDB
 
 load_dotenv()
 
@@ -26,6 +26,7 @@ class ITIBot(Bot):
         self.guild = Object(id=int(os.environ['GUILD_ID'] if prod else os.environ['GUILD_ID_TEST']))
 
         self.school_guild = None
+        self.owner = int(os.environ['OWNER_ID'])
         self.log_channel = int(os.environ['LOG_CHANNEL'] if prod else os.environ['LOG_CHANNEL_TEST'])
         self.select_channel = int(os.environ['SELECT_CHANNEL'] if prod else os.environ['SELECT_CHANNEL_TEST'])
         self.analytics_channel = int(os.environ['ANALYTICS_CHANNEL'] if prod else os.environ['ANALYTICS_CHANNEL_TEST'])
@@ -33,8 +34,10 @@ class ITIBot(Bot):
         self.mongo_client = None
 
     async def setup_hook(self):
-        # Fetch channels
         self.school_guild = await self.fetch_guild(self.guild.id)
+        self.owner = self.get_user(self.owner) or await self.fetch_user(self.owner)
+
+        # Fetch channels
         self.log_channel = await self.fetch_channel(self.log_channel)
         self.select_channel = await self.fetch_channel(self.select_channel)
         self.analytics_channel = await self.fetch_channel(self.analytics_channel)
@@ -48,10 +51,9 @@ class ITIBot(Bot):
         self.mongo_client = motor.AsyncIOMotorClient(os.environ['MONGO_URL'])
 
         # Load persistent roles and analytics
-        with open("data/config.json", "r") as f:
-            config = json.load(f)
+        config_db = ConfigDB(self.mongo_client)
 
-        self.add_view(SelectRoleView(config["classes"]))
+        self.add_view(SelectClassView(await config_db.get_classes()))
         self.add_view(AnalyticsView(self.mongo_client))
 
     async def on_ready(self):

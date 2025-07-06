@@ -6,6 +6,20 @@ from discord.types.role import Role
 from discord.utils import format_dt
 
 
+async def delete_last_message(channel: TextChannel) -> None:
+    """
+    Deletes the last message in the channel.
+
+    :param channel: The channel to delete the last message from
+    :return: None
+    """
+    if not channel:
+        raise ValueError("Channel cannot be None")
+
+    async for message in channel.history(limit=1):
+        await message.delete()
+
+
 def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
     """
     It generates a list of embeds with the missing/returned teachers.
@@ -47,10 +61,10 @@ def generate_embeds(variations: list[dict], missing: bool = True) -> dict[str, l
 
     :param missing: If True, it generates the embeds for the missing teachers, otherwise for the returned teachers
     :param variations: The teachers to generate the embeds for
-    :return: A dictionary with the embeds variations grouped by class (Example can be found in examples/missing_teachers_embeds.json)
+    :return: A dictionary with the embeds check_variations grouped by class (Example can be found in examples/missing_teachers_embeds.json)
     """
 
-    # Group variations by class
+    # Group check_variations by class
     variations = sorted(variations, key=lambda x: x['class'])
     variations = groupby(variations, key=lambda x: x['class'])
 

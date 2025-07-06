@@ -3,8 +3,7 @@ from discord.ext.commands import Cog
 
 from src.commands.analytics.analytics import AnalyticsView
 from src.commands.analytics.plots import generate_plots
-from src.commands.loops.check_variations import refresh_variations
-from src.commands.roles import add_roles, upgrade_class
+from src.commands.loops.check_variations.variations import refresh_variations
 
 
 async def setup(bot):
@@ -40,7 +39,7 @@ class Admin(Cog):
 
         await itr.edit_original_response(content="Variazioni refreshate")
 
-    @app_commands.command(name="genera_grafici", description="ADMIN ONLY")
+    @app_commands.command(name="genera_grafici", description="ADMIN ONLY")  # TODO: Remove
     @app_commands.checks.has_permissions(administrator=True)
     async def generate_charts(self, itr):
         await itr.response.send_message("Generazione grafici in corso...", ephemeral=True)
@@ -48,23 +47,6 @@ class Admin(Cog):
         await generate_plots(self.bot.mongo_client)
 
         await itr.edit_original_response(content="Grafici generati")
-
-    @app_commands.command(name="aggiungi_ruoli", description="ADMIN ONLY")
-    @app_commands.describe(lista_classi="Lista delle classi prese dall'orario delle classi (prima pagina)")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def add_roles(self, itr, lista_classi: str):
-        await itr.response.send_message("Aggiornamento ruoli in corso...", ephemeral=True)
-
-        await add_roles(itr, lista_classi)
-
-    @app_commands.command(name="upgrade_ruoli", description="ADMIN ONLY")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def upgrade_roles(self, itr):
-        await itr.response.send_message(content="Upgrade in corso...", ephemeral=True)
-
-        await upgrade_class(itr)
-
-        await itr.edit_original_response(content="Upgrade completato")
 
     @app_commands.command(name="clear", description="ADMIN ONLY")
     @app_commands.describe(n="Numero di messaggi da cancellare")

@@ -2,7 +2,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 
-from src.mongo_repository.variations import Variations
+from src.mongo_repository.variations_db import VariationsDB
 from src.utils.os_utils import clear_folder
 
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
@@ -11,7 +11,7 @@ months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio"
 
 async def generate_plots(mongo_client):
     """
-    It generates the plots for the variations
+    It generates the plots for the check_variations
 
     :param mongo_client: Mongo client
     """
@@ -19,7 +19,7 @@ async def generate_plots(mongo_client):
     for folder in folders:
         clear_folder(folder)
 
-    db = Variations(mongo_client)
+    db = VariationsDB(mongo_client)
 
     # Classes plots
     for class_age in range(1, 6):
@@ -92,7 +92,7 @@ async def plot_professors_scoreboard(db):
     scoreboard = await db.get_professors_scoreboard()
 
     # Create a barchart
-    y_values = [item['variations'] for item in scoreboard[:20]]
+    y_values = [item['check_variations'] for item in scoreboard[:20]]
     plt.bar([item['_id'] for item in scoreboard[:20]], y_values)
 
     set_plot_config("Top 20 prof più assenti", "Prof.", "Ore di assenza dei prof.", rotation=90)
@@ -109,7 +109,7 @@ async def plot_summary_per_class_number(db):
     classes_count = await db.get_classes_count()
 
     # Create a barchart
-    # Number of variations is proportional to the number of classes for that class age
+    # Number of check_variations is proportional to the number of classes for that class age
     y_values = [summary[key] / classes_count[key] for key in summary.keys()]
     plt.bar(list(summary.keys()), y_values)
 
@@ -137,7 +137,7 @@ async def plot_per_class_age(db, class_age):
     scoreboard = await db.get_variations_per_class_age(class_age)
 
     # Create a barchart
-    y_values = [item['variations'] for item in scoreboard]
+    y_values = [item['check_variations'] for item in scoreboard]
     plt.bar([item['_id'] for item in scoreboard], y_values)
 
     set_plot_config(f"Classi {class_age}°", "Classi", "Ore di assenza dei prof.")

@@ -152,7 +152,8 @@ data/plots/datetime/*
 data/plots/subjects/*
 data/plots/teachers/*
 
-# Exclude .gitkeep files
+# Exclude temporary OCR data and models
 !.gitkeep
 /data/tmp-ocr/
 /data/ocr_models/
+/examples/structure/

@@ -3,7 +3,7 @@ import os
 import discord
 from discord import ui, ButtonStyle, Embed, Color, SelectOption
 
-from src.mongo_repository.variations import Variations
+from src.mongo_repository.variations_db import VariationsDB
 
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
 months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
@@ -13,7 +13,7 @@ class AnalyticsView(ui.View):
     def __init__(self, mongo_client):
         super().__init__(timeout=None)
         self.mongo_client = mongo_client
-        self.db = Variations(mongo_client)
+        self.db = VariationsDB(mongo_client)
 
         self.add_item(ClassesScoreboard())
         self.add_item(ProfessorsScoreboard())
@@ -29,7 +29,7 @@ class DatetimeStats(ui.Button):
         weekday_stats = await self.view.db.get_weekday_stats()
         hourly_stats = await self.view.db.get_hourly_stats()
 
-        await interaction.response.send_message(
+        await interaction.response.send_message(            # noqa
             embed=Embed(
                 title="Statistiche temporali",
                 description=f"Mese con più sostituzioni: **{months[max(yearly_stats, key=yearly_stats.get) - 1]}**\n"
@@ -65,10 +65,10 @@ class ProfessorsScoreboard(ui.Button):
     async def callback(self, interaction):
         scoreboard = await self.view.db.get_professors_scoreboard()
 
-        await interaction.response.send_message(
+        await interaction.response.send_message(            # noqa
             embed=Embed(
                 title="Top 10 prof. con più sostituzioni",
-                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['variations']} ore di assenza" for index, item in enumerate(scoreboard[:10])]),
+                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['check_variations']} ore di assenza" for index, item in enumerate(scoreboard[:10])]),
                 color=Color.gold()
             ),
             file=discord.File("data/plots/teachers/professors_scoreboard.png"),  # Remove if other plots are added
@@ -96,10 +96,10 @@ class ClassesScoreboard(ui.Button):
     async def callback(self, interaction):
         scoreboard = await self.view.db.get_classes_scoreboard()
 
-        await interaction.response.send_message(
+        await interaction.response.send_message(            # noqa
             embed=Embed(
                 title="Top 10 classi con più prof. assenti",
-                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['variations']} sostituzioni" for index, item in enumerate(scoreboard[:10])]),
+                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['check_variations']} sostituzioni" for index, item in enumerate(scoreboard[:10])]),
                 color=Color.gold()
             ),
             ephemeral=True
@@ -133,7 +133,7 @@ class SelectPlot(ui.Select):
         self.path_to_plot = path_to_plot
 
     async def callback(self, interaction):
-        await interaction.response.defer()
+        await interaction.response.defer()              # noqa
 
         files = []
 

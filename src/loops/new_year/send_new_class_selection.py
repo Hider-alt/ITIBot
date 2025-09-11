@@ -1,19 +1,16 @@
 from discord import TextChannel, Embed, Color
 
-from src.commands.loops.new_year.ui.select_class_view import SelectClassView
-from src.utils.discord_utils import delete_last_message
+from src.loops.new_year.ui.select_class_view import SelectClassView
 
 
-async def send_new_class_selection(channel: TextChannel, classes: list[str]) -> list[list[str]]:
+async def send_new_class_selection(channel: TextChannel, classes: set[str]) -> list[list[str]]:
     """
     Sends new message to the channel to select new classes and deletes the old one.
 
     :param channel: The channel where the message will be sent.
-    :param classes: List of class names to be grouped and displayed.
+    :param classes: Set of class names to be grouped and displayed.
     :return: List of lists, where each sublist contains classes that share the same first digit.
     """
-
-    await delete_last_message(channel)
 
     # Send new message to select new classes
     grouped_classes = group_classes_by_first_digit(classes)
@@ -23,11 +20,11 @@ async def send_new_class_selection(channel: TextChannel, classes: list[str]) -> 
     return grouped_classes
 
 
-def group_classes_by_first_digit(classes: list[str]) -> list[list[str]]:
+def group_classes_by_first_digit(classes: set[str]) -> list[list[str]]:
     """
     Groups classes by their first digit (each list sorted alphabetically).
 
-    :param classes: List of class names.
+    :param classes: Set of class names.
     :return: List of lists, where each sublist contains classes that share the same first digit.
     """
 
@@ -45,12 +42,16 @@ def group_classes_by_first_digit(classes: list[str]) -> list[list[str]]:
     for key in grouped_classes:
         grouped_classes[key].sort()
 
+    # Sort groups by the first digit
+    grouped_classes = dict(sorted(grouped_classes.items(), key=lambda item: item[0]))
+
     return list(grouped_classes.values())
 
 
 async def send_select_role_message(channel, classes: list[list[str]]):
     embed = Embed(
         title="Seleziona la tua classe",
+        description="Se hai già un ruolo di una classe, selezionando un'altra classe ti verrà rimosso il vecchio ruolo",
         color=Color.green()
     )
 

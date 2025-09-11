@@ -3,21 +3,24 @@ import os
 import discord
 from discord import ui, ButtonStyle, Embed, Color, SelectOption
 
-from src.mongo_repository.variations_db import VariationsDB
+from src.mongo_db.variations_db import VariationsDB
 
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
 months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 
 
 class AnalyticsView(ui.View):
-    def __init__(self, mongo_client):
+    def __init__(self, mongo_client, school_year):
         super().__init__(timeout=None)
         self.mongo_client = mongo_client
-        self.db = VariationsDB(mongo_client)
+        self.db = VariationsDB(mongo_client, school_year)
 
         self.add_item(ClassesScoreboard())
         self.add_item(ProfessorsScoreboard())
         self.add_item(DatetimeStats())
+
+    def update_school_year(self, school_year):
+        self.db = VariationsDB(self.mongo_client, school_year)
 
 
 class DatetimeStats(ui.Button):
@@ -53,7 +56,7 @@ class DatetimeStats(ui.Button):
                 description="Seleziona uno o più grafici da vedere",
                 color=Color.gold()
             ),
-            view=SelectPlotView(options, "data/plots/datetime/"),
+            view=SelectPlotView(options, "assets/plots/datetime/"),
             ephemeral=True
         )
 
@@ -63,30 +66,19 @@ class ProfessorsScoreboard(ui.Button):
         super().__init__(style=ButtonStyle.blurple, label="Classifica prof.", custom_id="professors_scoreboard")
 
     async def callback(self, interaction):
-        scoreboard = await self.view.db.get_professors_scoreboard()
+        scoreboard = await self.view.db.get_professors_leaderboard()
+
+        leaderboard_text = "\n".join([f"{index + 1}. **{item['_id']}** - {item['count']} ore di assenza" for index, item in enumerate(scoreboard[:10])])
 
         await interaction.response.send_message(            # noqa
             embed=Embed(
                 title="Top 10 prof. con più sostituzioni",
-                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['check_variations']} ore di assenza" for index, item in enumerate(scoreboard[:10])]),
+                description=leaderboard_text,
                 color=Color.gold()
             ),
-            file=discord.File("data/plots/teachers/professors_scoreboard.png"),  # Remove if other plots are added
+            file=discord.File("assets/plots/teachers/professors_scoreboard.png"),  # Remove if other plots are added
             ephemeral=True
         )
-
-        # Uncomment this if other plots are added
-        # options = [SelectOption(label="Classifica prof", value="professors_scoreboard")]
-        #
-        # await interaction.followup.send(
-        #     embed=Embed(
-        #         title="Classifica prof.",
-        #         description="Seleziona uno o più grafici da vedere",
-        #         color=Color.gold()
-        #     ),
-        #     view=SelectPlotView(options, "data/plots/teachers"),
-        #     ephemeral=True
-        # )
 
 
 class ClassesScoreboard(ui.Button):
@@ -94,19 +86,19 @@ class ClassesScoreboard(ui.Button):
         super().__init__(style=ButtonStyle.blurple, label="Classifica classi", custom_id="classes_scoreboard")
 
     async def callback(self, interaction):
-        scoreboard = await self.view.db.get_classes_scoreboard()
+        scoreboard = await self.view.db.get_classes_leaderboard()
 
         await interaction.response.send_message(            # noqa
             embed=Embed(
                 title="Top 10 classi con più prof. assenti",
-                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['check_variations']} sostituzioni" for index, item in enumerate(scoreboard[:10])]),
+                description="\n".join([f"{index + 1}. **{item['_id']}** - {item['count']} sostituzioni" for index, item in enumerate(scoreboard[:10])]),
                 color=Color.gold()
             ),
             ephemeral=True
         )
 
-        options = [SelectOption(label="Overview classi", value="summary")] + \
-                  [SelectOption(label="Overview classi proporzionale al numero di sezioni", value="summary_per_class_number")] + \
+        options = [SelectOption(label="Numero di variazioni di ogni annata ", value="summary")] + \
+                  [SelectOption(label="Numero di variazioni medie delle classi (suddivise per annate)", value="summary_per_class_number")] + \
                   [SelectOption(label=f"Classi {class_age}°", value=f"class_{class_age}_scoreboard") for class_age in range(1, 6)] + \
                   [SelectOption(label="Tutti i grafici", value="all")]
 
@@ -116,7 +108,7 @@ class ClassesScoreboard(ui.Button):
                 description="Seleziona uno o più grafici da vedere",
                 color=Color.gold()
             ),
-            view=SelectPlotView(options, "data/plots/classes"),
+            view=SelectPlotView(options, "assets/plots/classes"),
             ephemeral=True
         )
 

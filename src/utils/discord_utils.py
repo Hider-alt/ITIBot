@@ -1,9 +1,7 @@
-import datetime
-from itertools import groupby
+from discord import TextChannel, utils, Role
 
-from discord import Embed, Color, utils, TextChannel
-from discord.types.role import Role
-from discord.utils import format_dt
+fetched_channels = []
+fetched_roles = []
 
 
 async def delete_last_message(channel: TextChannel) -> None:
@@ -20,118 +18,60 @@ async def delete_last_message(channel: TextChannel) -> None:
         await message.delete()
 
 
-def generate_embed(variations: list[dict], missing: bool = True) -> list[Embed]:
+async def notify_owner(bot, message: str) -> None:
     """
-    It generates a list of embeds with the missing/returned teachers.
+    Sends a message to the log channel.
 
-    :param variations: The teachers to generate the embeds for
-    :param missing: Whether the teachers are missing or returned
-    :return: A list of embeds
-    """
-    # Create embed grouped by date
-    embeds = []
-
-    date_group = sorted(variations, key=lambda x: x['date'])
-    for date, variations in groupby(date_group, key=lambda x: x['date']):
-        date = datetime.datetime.strptime(date, '%d-%m-%Y')
-
-        title = f":tada: Nuove variazioni per {format_dt(date, 'D')}:" if missing else f":frowning2: Variazioni rimosse per il {format_dt(date, 'D')}:"
-
-        embed = Embed(title=title, color=Color.green() if missing else Color.red())
-
-        for variation in variations:
-            embed.add_field(
-                name=f":teacher: **Docente assente**: {variation['teacher']}",
-                value=f"• **Ora:** {variation['hour']}^\n"
-                      f"• **Aula:** {variation['classroom']}\n"
-                      f"• **Sostituto:** {variation['substitute_1']}\n"
-                      f"• **Note:** {variation['notes']}\n"
-                      f"──────────────────────────────────",
-                inline=False
-            )
-
-        embeds.append(embed)
-
-    return embeds
-
-
-def generate_embeds(variations: list[dict], missing: bool = True) -> dict[str, list[Embed]]:
-    """
-    It generates an embed with the missing/returned teachers.
-
-    :param missing: If True, it generates the embeds for the missing teachers, otherwise for the returned teachers
-    :param variations: The teachers to generate the embeds for
-    :return: A dictionary with the embeds check_variations grouped by class (Example can be found in examples/missing_teachers_embeds.json)
-    """
-
-    # Group check_variations by class
-    variations = sorted(variations, key=lambda x: x['class'])
-    variations = groupby(variations, key=lambda x: x['class'])
-
-    # Generate embeds
-    if missing:
-        return {class_name: generate_embed(teachers) for class_name, teachers in variations}
-    else:
-        return {class_name: generate_embed(teachers, missing=False) for class_name, teachers in variations}
-
-
-def merge_embeds(*embeds: dict[str, list[Embed]]) -> dict[str, list[Embed]]:
-    """
-    It merges the embeds of the same class.
-
-    :param embeds: The embeds to merge
-    :return: A dictionary with the merged embeds
-    """
-    merged_embeds = {}
-    for embed in embeds:
-        for class_name, class_embeds in embed.items():
-            if class_name not in merged_embeds:
-                merged_embeds[class_name] = class_embeds
-            else:
-                merged_embeds[class_name].extend(class_embeds)
-
-    return merged_embeds
-
-
-async def send_embeds(bot, channel, embeds_dict: dict[str, list[Embed]], ocr: bool = False) -> None:
-    """
-    It sends the embeds to a specific channel.
-
-    :param bot: Discord bot
-    :param channel: The channel to send the embeds to
-    :param embeds_dict: The embeds to send (Structured as in generate_embeds())
-    :param ocr: Whether the PDF was converted using OCR
+    :param bot: The bot instance
+    :param message: The message to send
     :return: None
     """
-    guild = bot.school_guild
 
-    guild_channels = guild.channels
-    if not guild_channels:
-        guild_channels = await guild.fetch_channels()
+    await bot.admin_channel.send(content=f"{bot.owner.mention}\n{message}")
 
-    owner = bot.get_user(guild.owner_id)
-    if owner is None:
-        owner = await bot.fetch_user(guild.owner_id)
 
-    for class_name, embeds in embeds_dict.items():
-        role: Role = utils.get(guild.roles, name=class_name)
-        if not role:
-            continue
+async def fetch_channel(guild, channel_name: str):
+    global fetched_channels
 
-        # Send in global channel
-        if ocr:
-            embeds = [embed.set_footer(text="Le variazioni sono state lette tramite OCR, quindi potrebbero esserci errori") for embed in embeds]
-        else:
-            roman_id = 865938848362266644
-            roman = bot.get_user(roman_id) or {'display_name': 'Roman'}
+    print("Fetching channels")
+    channels = await guild.fetch_channels()
+    print(channels)
+    fetched_channels = channels
 
-            embeds = [embed.set_footer(icon_url=owner.avatar.url, text=f"Dev: {owner.display_name} | Hosting offerto da {roman.display_name}") for embed in embeds]
+    return utils.get(channels, name=channel_name)
 
-        await channel.send(content=f"Classe: **{role.name}**", embeds=embeds)
 
-        # Send in class channel
-        class_channel: TextChannel = utils.get(guild_channels, name=("variazioni-orario-" + class_name).lower())
+async def fetch_role(guild, role_name: str):
+    global fetched_roles
 
-        m = await class_channel.send(content=role.mention, embeds=embeds)
-        await m.add_reaction("\U0001f389")
-        await m.add_reaction("\U0001f62d")
+    print("Fetching roles")
+    roles = await guild.fetch_roles()
+    fetched_roles = roles
+
+    return utils.get(roles, name=role_name)
+
+
+async def get_or_fetch_channel(guild, channel_name: str):
+    channel = utils.get(guild.channels, name=channel_name)
+
+    if not channel:
+        channel = utils.get(fetched_channels, name=channel_name)
+
+    if not channel:
+        print("Fetching channel: ", channel_name)
+        channel = await fetch_channel(guild, channel_name)
+
+    return channel
+
+
+async def get_or_fetch_role(guild, role_name: str) -> Role:
+    role = utils.get(guild.roles, name=role_name)
+
+    if not role:
+        role = utils.get(fetched_roles, name=role_name)
+
+    if not role:
+        print("Fetching role: ", role_name)
+        role = await fetch_role(guild, role_name)
+
+    return role

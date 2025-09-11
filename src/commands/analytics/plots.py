@@ -1,40 +1,51 @@
+import asyncio
+import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+from discord import File
 
-from src.mongo_repository.variations_db import VariationsDB
+from src.mongo_db.variations_db import VariationsDB
 from src.utils.os_utils import clear_folder
 
 weekdays = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"]
 months = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
 
+generate_plots_lock = asyncio.Lock()
 
-async def generate_plots(mongo_client):
+
+async def generate_plots(bot) -> list[File]:
     """
-    It generates the plots for the check_variations
+    It generates plots about the variations in the database and saves them in the assets/plots folder.
 
-    :param mongo_client: Mongo client
+    :param bot: The bot instance
+    :return: A list of discord.File objects representing the generated plots.
     """
-    folders = ['data/plots/classes', 'data/plots/datetime', 'data/plots/teachers', 'data/plots/subjects']
-    for folder in folders:
-        clear_folder(folder)
 
-    db = VariationsDB(mongo_client)
+    async with generate_plots_lock:
+        folders = ['assets/plots/classes', 'assets/plots/datetime', 'assets/plots/teachers']
+        for folder in folders:
+            clear_folder(folder)
 
-    # Classes plots
-    for class_age in range(1, 6):
-        await plot_per_class_age(db, class_age)
+        db = VariationsDB(bot.mongo_client, bot.school_year)
 
-    await plot_summary(db)
-    await plot_summary_per_class_number(db)
+        # Classes plots
+        for class_age in range(1, 6):
+            await plot_per_class_age(db, class_age)
 
-    # Professors plots
-    await plot_professors_scoreboard(db)
+        await plot_summary(db)
+        await plot_summary_per_class_number(db)
 
-    # Datetime plots
-    await plot_variations_per_month(db)
-    await plot_variations_per_weekday(db)
-    await plot_variations_per_hour(db)
+        # Professors plots
+        await plot_professors_scoreboard(db)
+
+        # Datetime plots
+        await plot_variations_per_month(db)
+        await plot_variations_per_weekday(db)
+        await plot_variations_per_hour(db)
+
+        paths = [f"{folder}/{file}" for folder in folders for file in os.listdir(folder) if file.endswith('.png')]
+        return [File(path) for path in paths]
 
 
 async def plot_variations_per_hour(db):
@@ -46,7 +57,7 @@ async def plot_variations_per_hour(db):
     set_plot_config("Variazioni per ora", "Ore", "Numero di sostituzioni")
 
     # Save the plot
-    plt.savefig('data/plots/datetime/hourly.png')
+    plt.savefig('assets/plots/datetime/hourly.png')
     plt.clf()
 
 
@@ -64,10 +75,10 @@ async def plot_variations_per_weekday(db):
     # Create a barchart
     plt.bar(x_values, y_values)
 
-    set_plot_config("Variazioni per giorno settimanale", "Giorni settimanali", "Numero di sostituzioni")
+    set_plot_config("Media di variazioni per ogni giorno settimanale", "Giorni settimanali", "Numero di sostituzioni medie")
 
     # Save the plot
-    plt.savefig('data/plots/datetime/weekly.png')
+    plt.savefig('assets/plots/datetime/weekly.png')
     plt.clf()
 
 
@@ -84,21 +95,21 @@ async def plot_variations_per_month(db):
     set_plot_config("Variazioni per mese", "Mesi", "Numero di sostituzioni", rotation=90)
 
     # Save the plot
-    plt.savefig('data/plots/datetime/monthly.png', bbox_inches='tight')
+    plt.savefig('assets/plots/datetime/monthly.png', bbox_inches='tight')
     plt.clf()
 
 
 async def plot_professors_scoreboard(db):
-    scoreboard = await db.get_professors_scoreboard()
+    scoreboard = await db.get_professors_leaderboard()
 
     # Create a barchart
-    y_values = [item['check_variations'] for item in scoreboard[:20]]
+    y_values = [item['count'] for item in scoreboard[:20]]
     plt.bar([item['_id'] for item in scoreboard[:20]], y_values)
 
-    set_plot_config("Top 20 prof più assenti", "Prof.", "Ore di assenza dei prof.", rotation=90)
+    set_plot_config("Top 20 prof più assenti", "Prof.", "Ore di assenza", rotation=90)
 
     # Save the plot
-    plt.savefig('data/plots/teachers/professors_scoreboard.png', bbox_inches='tight')
+    plt.savefig('assets/plots/teachers/professors_scoreboard.png', bbox_inches='tight')
     plt.clf()
 
 
@@ -109,14 +120,14 @@ async def plot_summary_per_class_number(db):
     classes_count = await db.get_classes_count()
 
     # Create a barchart
-    # Number of check_variations is proportional to the number of classes for that class age
+    # Number of variations is proportional to the number of classes for that class age
     y_values = [summary[key] / classes_count[key] for key in summary.keys()]
     plt.bar(list(summary.keys()), y_values)
 
-    set_plot_config("Overview proporzionale al numero di sezioni", "Classi", "Ore di assenza dei prof. per sezione")
+    set_plot_config("Numero di variazioni medie delle classi (suddivise per annate)", "Anni", "Numero di variazioni medie")
 
     # Save the plot
-    plt.savefig('data/plots/classes/summary_per_class_number.png')
+    plt.savefig('assets/plots/classes/summary_per_class_number.png')
     plt.clf()
 
 
@@ -126,10 +137,10 @@ async def plot_summary(db):
     # Create a barchart
     plt.bar(list(summary.keys()), list(summary.values()))
 
-    set_plot_config("Overview classi", "Classi", "Ore di assenza dei prof.")
+    set_plot_config("Numero di variazioni di ogni annata", "Anni", "Numero di variazioni")
 
     # Save the plot
-    plt.savefig('data/plots/classes/summary.png')
+    plt.savefig('assets/plots/classes/summary.png')
     plt.clf()
 
 
@@ -137,13 +148,13 @@ async def plot_per_class_age(db, class_age):
     scoreboard = await db.get_variations_per_class_age(class_age)
 
     # Create a barchart
-    y_values = [item['check_variations'] for item in scoreboard]
+    y_values = [item['variations'] for item in scoreboard]
     plt.bar([item['_id'] for item in scoreboard], y_values)
 
-    set_plot_config(f"Classi {class_age}°", "Classi", "Ore di assenza dei prof.")
+    set_plot_config(f"Classi {class_age}°", "Classi", "Numero di variazioni")
 
     # Save the plot
-    plt.savefig(f'data/plots/classes/class_{class_age}_scoreboard.png')
+    plt.savefig(f'assets/plots/classes/class_{class_age}_scoreboard.png')
     plt.clf()
 
 

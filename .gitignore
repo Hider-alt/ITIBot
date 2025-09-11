@@ -143,17 +143,18 @@ logos/
 *.rar
 *.zip
 
-# Exclude downloads and plots folders content (except .gitkeep file)
-data/downloads/*
+!.gitkeep
+
+# Exclude test_files
+assets/test_files/
 
 # Plots
-data/plots/classes/*
-data/plots/datetime/*
-data/plots/subjects/*
-data/plots/teachers/*
+assets/plots/classes/*
+assets/plots/datetime/*
+assets/plots/subjects/*
+assets/plots/teachers/*
 
-# Exclude temporary OCR data and models
-!.gitkeep
-/data/tmp-ocr/
-/data/ocr_models/
-/examples/structure/
+# Temp OCR assets and models
+examples/structure/
+assets/tmp-ocr/*
+assets/ocr-models/*

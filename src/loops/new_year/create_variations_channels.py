@@ -26,8 +26,8 @@ async def delete_variations_channels(bot) -> None:
     categories = set()
     channels = await bot.guild.fetch_channels()
     for channel in channels:
-        if channel.name.startswith("variazioni-orario-"):    # TODO: Remove orario-
-            class_name = channel.name.replace("variazioni-orario-", "")    # TODO: Remove orario-
+        if channel.name.startswith("variazioni-"):
+            class_name = channel.name.replace("variazioni-", "")
 
             # If no category of categories, starts with the same number of class_name (first char), then fetch category
             if not any([category.name[0] == class_name[0] for category in categories]):

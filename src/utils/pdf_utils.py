@@ -1,72 +1,67 @@
-import csv
-import os
+from io import BytesIO
 
 import pdfplumber
 from PyPDF2 import PdfReader, PdfWriter
 
 
-class ConversionException(Exception):
+class ConversionException(Exception):    # maybe move
     def __init__(self, message: str):
         super().__init__(message)
 
 
-def rotate_pdf(pdf_path: str, output_path: str, delete_original: bool = True, rotation_degrees=270) -> None:
+def save_pdf(pdf: bytes, path: str) -> None:
     """
-    It takes a PDF file, rotates (anti-clockwise) each page and saves the result to a new PDF file
+    Saves PDF bytes to a specified file path.
 
-    :param pdf_path: The path to the PDF file you want to rotate
-    :param output_path: The path to the output file
-    :param delete_original: If True, the original PDF will be deleted, defaults to True (optional)
-    :param rotation_degrees: The degrees to rotate the pages, defaults to 270
+    :param pdf: PDF bytes to be saved
+    :param path: Path where the PDF will be saved
     """
-    with open(pdf_path, 'rb') as pdf_file:
-        # Rotate pages
-        pdf_reader = PdfReader(pdf_file)
-        pdf_writer = PdfWriter()
-
-        for page in pdf_reader.pages:
-            page.rotate(-rotation_degrees)
-            pdf_writer.add_page(page)
-
-        # Save the rotated pages to a new PDF file
-        with open(output_path, 'wb') as new_pdf:
-            pdf_writer.write(new_pdf)
-
-    if delete_original:
-        os.remove(pdf_path)
+    with open(path, 'wb') as f:
+        f.write(pdf)
 
 
-def get_rows_from_pdf(pdf_path: str, table_settings: dict = None) -> list:
+def rotate_pdf(pdf: bytes, rotation_degrees: int) -> bytes:
     """
-    It takes a PDF file and returns a list of strings, each representing a line in the PDF
+    Rotates the pages of a PDF by a specified number of degrees.
 
-    :param pdf_path: The path to the PDF file
+    :param pdf: PDF bytes to be rotated
+    :param rotation_degrees: The degrees to rotate the PDF pages. Must be a multiple of 90.
+    :return: Rotated PDF bytes
+    """
+    if rotation_degrees % 90 != 0:
+        raise ValueError("rotation_degrees must be a multiple of 90")
+
+    if rotation_degrees % 360 == 0:
+        return pdf
+
+    with BytesIO(pdf) as input_stream, BytesIO() as output_stream:
+        reader = PdfReader(input_stream)
+        writer = PdfWriter()
+
+        for page in reader.pages:
+            page.rotate(rotation_degrees)
+            writer.add_page(page)
+
+        writer.write(output_stream)
+        return output_stream.getvalue()
+
+
+def get_rows_from_pdf_table(pdf: bytes, table_settings: dict = None) -> list[list[str]]:
+    """
+    Extracts rows from a PDF table (text-based extraction).
+
+    :param pdf: PDF bytes
     :param table_settings: Settings for the table extraction
-    :return: A list of strings, each representing a line in the PDF
+    :return: A list of strings, each representing a row in the PDF
     """
 
     if table_settings is None:
         table_settings = {}
 
     lines = []
-    with pdfplumber.open(pdf_path) as pdf:
+    with pdfplumber.open(BytesIO(pdf)) as pdf:
         for page in pdf.pages:
             table = page.extract_table(table_settings=table_settings)
             lines.extend(table)
 
     return lines
-
-
-def write_rows_to_csv(csv_path: str, rows: list, encoding: str):
-    """
-    Write the rows to a CSV file
-
-    :param csv_path: Path to the CSV file
-    :param rows: List of rows to write
-    :param encoding: Encoding to use
-    :return: None
-    """
-
-    with open(csv_path, 'w', newline='', encoding=encoding) as f:
-        writer = csv.writer(f)
-        writer.writerows(rows)

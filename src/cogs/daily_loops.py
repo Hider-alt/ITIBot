@@ -6,9 +6,13 @@ import pytz
 from discord.ext import tasks
 from discord.ext.commands import Cog
 
-from src.commands.loops.check_variations.variations import refresh_variations
-from src.mongo_repository.variations_db import VariationsDB
-from src.utils.datetime_utils import is_christmas, is_summer
+from src.api.iti.variations import VariationsAPI
+from src.loops.check_variations.classify_variations import classify_variations
+from src.loops.check_variations.create_embeds import create_variations_embeds
+from src.loops.check_variations.group_variations import group_variations_by_class
+from src.loops.check_variations.send_embeds import send_grouped_embeds
+from src.mongo_db.variations_db import VariationsDB
+from src.utils.datetime_utils import is_christmas, is_school_over
 
 
 async def setup(bot):
@@ -26,8 +30,8 @@ class DailyLoops(Cog):
         now = datetime.now(pytz.timezone('Europe/Rome'))
 
         # Stop loops during festivities or summer
-        if is_christmas(now) or is_summer(now):
-            print(f"Stopping loops for festivities ({now})")
+        if is_christmas(now) or is_school_over(now):
+            print(f"Stopping daily loops for festivities ({now})")
 
             if self.check_variations.is_running():
                 print("Stopping Variations Check")
@@ -47,6 +51,8 @@ class DailyLoops(Cog):
 
     @tasks.loop(minutes=15)
     async def check_variations(self):
+        """ Check for new variations, notify users and save them to the database. """
+
         now = datetime.now(pytz.timezone('Europe/Rome'))
 
         if 0 < now.hour < 6:
@@ -54,23 +60,45 @@ class DailyLoops(Cog):
             return
 
         print(f"[{now}] Checking Variations")
-        await refresh_variations(self.bot)
 
-    # Check every day at 20:00 if check_variations have been detected for the next day
+        variations_db = VariationsDB(self.bot.mongo_client, self.bot.school_year)
+
+        links = await VariationsAPI.get_variations_links()
+        variations = await VariationsAPI.get_variations(*links)
+
+        await classify_variations(self.bot, variations)
+        if not variations:
+            print(f"[{now}] No new variations")
+            return
+
+        grouped_variations: dict[str, list] = group_variations_by_class(variations)
+
+        # Create embeds for each class
+        grouped_embeds = {}
+        for class_name, class_vars in grouped_variations.items():
+            grouped_embeds[class_name] = create_variations_embeds(*class_vars)
+
+        await send_grouped_embeds(self.bot, grouped_embeds)
+
+        await variations_db.save_variations(variations)
+
+        print(f"[{now}] Variations Check complete, {len(variations)} variations processed")
+
+    # Check every day at 20:00 if variations have been detected for the next day
     @tasks.loop(time=time(20))
     async def check_variations_sent(self):
         now = datetime.now(pytz.timezone('Europe/Rome'))
         tomorrow = now + timedelta(days=1)
 
-        # Skip if tomorrow is a Sunday (there are no check_variations on Sundays)
+        # Skip if tomorrow is a Sunday (there are no variations on Sundays)
         if tomorrow.weekday() == calendar.SUNDAY:
             print(f"[{now}] Skipping Variations Sent Check (Sunday)")
             return
 
         print(f"[{now}] Checking Variations Sent")
 
-        db = VariationsDB(self.bot.mongo_client)
-        tomorrow_var = await db.get_variations_by_date(tomorrow.strftime("%d-%m-%Y"))
+        db = VariationsDB(self.bot.mongo_client, self.bot.school_year)
+        tomorrow_var = await db.get_variations_by_date(tomorrow.date())
 
         if not tomorrow_var:
             embed = discord.Embed(

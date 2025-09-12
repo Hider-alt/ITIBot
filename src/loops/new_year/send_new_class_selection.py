@@ -52,7 +52,7 @@ async def send_select_role_message(channel, classes: list[list[str]]):
     embed = Embed(
         title="Seleziona la tua classe",
         description="Se hai già un ruolo di una classe, selezionando un'altra classe ti verrà rimosso il vecchio ruolo",
-        color=Color.green()
+        color=Color.og_blurple()
     )
 
     await channel.send(embed=embed, view=SelectClassView(classes))

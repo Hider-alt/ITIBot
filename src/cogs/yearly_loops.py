@@ -20,7 +20,7 @@ class YearlyLoops(Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.new_year_date = datetime.datetime(datetime.datetime.now().year, 9, 11, 23, 59, 59)   # todo day: 10
+        self.new_year_date = datetime.datetime(datetime.datetime.now().year, 9, 10, 23, 59, 59)
         self.new_year.start()
 
     # Run every year on 12/09
@@ -49,15 +49,7 @@ class YearlyLoops(Cog):
 
         print(f"[{now}] Roles upgraded successfully")
 
-        # 2 - Send analytics recap and selection
-
-        await delete_last_message(self.bot.analytics_channel)
-
-        await send_analytics_recap(self.bot)
-
-        await send_analytics_selection(self.bot)
-
-        # 3 - Create new classes channels and send selection message
+        # 2 - Create new classes channels and send selection message
 
         await delete_last_message(self.bot.select_channel)
 
@@ -68,6 +60,14 @@ class YearlyLoops(Cog):
 
         await create_variations_channels(self.bot, grouped_classes)
         print(f"[{now}] New classes created and set up successfully")
+
+        # 3 - Send analytics recap and selection
+
+        await delete_last_message(self.bot.analytics_channel)
+
+        await send_analytics_recap(self.bot)
+
+        await send_analytics_selection(self.bot)
 
         # 4 - Update school year in bot and DB
 

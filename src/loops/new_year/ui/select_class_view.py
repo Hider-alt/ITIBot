@@ -3,8 +3,6 @@ import re
 
 from discord import ui, SelectOption, Interaction, utils, Embed, Color, Role, Member
 
-from src.utils.datetime_utils import is_school_over
-
 
 class SelectClassView(ui.View):
     def __init__(self, classes: list[list[str]]):
@@ -34,7 +32,9 @@ class SelectClass(ui.Select):
     async def callback(self, itr: Interaction):
         """Handles the selection of a class from the dropdown."""
 
-        if is_school_over(datetime.datetime.now()):
+        # Check if it's summer
+        now = datetime.datetime.now()
+        if 6 <= now.month < 9:
             await itr.response.send_message(            # noqa
                 embed=Embed(
                     title="Al momento non puoi cambiare ruolo",

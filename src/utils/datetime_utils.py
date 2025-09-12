@@ -59,7 +59,7 @@ def is_christmas(date: datetime) -> bool:
 
 def is_school_over(date: datetime) -> bool:
     """
-    It checks if the date is in the summer period (from 06/06 to 15/09)
+    It checks if the date is in the summer period (from 06/06 to 14/09)
 
     :param date: The date to check
     :returns: True if the date is in the summer period, False otherwise
@@ -67,6 +67,6 @@ def is_school_over(date: datetime) -> bool:
     year = date.year
 
     summer_start = datetime(year, 6, 6, tzinfo=date.tzinfo)
-    summer_end = datetime(year, 9, 15, tzinfo=date.tzinfo)
+    summer_end = datetime(year, 9, 14, tzinfo=date.tzinfo)
 
     return summer_start <= date <= summer_end

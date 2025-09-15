@@ -100,7 +100,12 @@ class DailyLoops(Cog):
         db = VariationsDB(self.bot.mongo_client, self.bot.school_year)
         tomorrow_var = await db.get_variations_by_date(tomorrow.date())
 
-        if not tomorrow_var:
+        # If variations exist for tomorrow, do nothing
+        if tomorrow_var:
+            return
+
+        # If we are here, there are no variations for tomorrow, so we check if there's any link in ITI page
+        if await VariationsAPI.get_variations_links():
             embed = discord.Embed(
                 title="Sembrano non esserci variazioni per domani...",
                 description="Controlla manualmente [nel sito](https://www.ispascalcomandini.it/variazioni-orario-istituto-tecnico-tecnologico/2017/09/15/) per sicurezza!",

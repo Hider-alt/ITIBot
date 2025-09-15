@@ -157,4 +157,5 @@ assets/plots/teachers/*
 # Temp OCR assets and models
 examples/structure/
 assets/tmp-ocr/*
-assets/ocr-models/*
+assets/ocr-models/det/*
+assets/ocr-models/rec/*

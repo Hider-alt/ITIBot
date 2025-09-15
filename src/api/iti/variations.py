@@ -111,7 +111,7 @@ class VariationsAPI(ITIAPI):
                 if variations:
                     return variations
             except Exception as e:
-                print(f"Error during parsing with {parser.__class__.__name__}: {e}")
+                print(f"Error parsing with {parser.__class__.__name__}: {e}")
 
         print("All methods failed to parse the PDF.")
         return None

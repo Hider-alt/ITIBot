@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 
 from src.api.iti._iti_ import ITIAPI
+from src.api.iti.variations_parsers.excel_ui import ExcelUIParser
 from src.api.iti.variations_parsers.new_ui import NewUIParser
 from src.api.iti.variations_parsers.ocr import OCRParser
 from src.api.iti.variations_parsers.old_ui import OldUIParser
@@ -103,7 +104,7 @@ class VariationsAPI(ITIAPI):
         :return: A list of Variation objects or None if parsing fails.
         """
 
-        parsers = [NewUIParser(), OldUIParser(), OCRParser()]
+        parsers = [ExcelUIParser(), NewUIParser(), OldUIParser(), OCRParser()]
 
         for parser in parsers:
             try:

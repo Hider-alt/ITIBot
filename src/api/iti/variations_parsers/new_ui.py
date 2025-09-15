@@ -7,7 +7,7 @@ from src.utils.utils import to_thread
 
 
 class NewUIParser(PDFParser):
-    class __Columns(Enum):
+    class _Columns(Enum):
         """
         Enum-like class to represent the columns in the variations table.
         """
@@ -21,7 +21,7 @@ class NewUIParser(PDFParser):
 
     def __init__(self):
         super().__init__()
-        self.__required_headers = {'Ora', 'Classe', 'Docente assente', 'Sostituto 1', 'Sostituto 2', 'Note'}
+        self._required_headers = {'Ora', 'Classe', 'Docente assente', 'Sostituto 1', 'Sostituto 2', 'Note'}
 
     @to_thread
     def _parse(self, pdf: bytes) -> list[Variation] | None:
@@ -38,7 +38,12 @@ class NewUIParser(PDFParser):
 
         valid = self._is_parser_valid(table_rows[0])
         if not valid:
-            return None
+            # Try with 2nd row as header
+            valid = self._is_parser_valid(table_rows[1])
+            if valid:
+                table_rows = table_rows[1:]
+            else:
+                return None
 
         variations = []
         signature_idx = self._get_signature_index(table_rows[0])
@@ -52,13 +57,16 @@ class NewUIParser(PDFParser):
 
     def _is_parser_valid(self, header_row: list[str]) -> bool:
         """
-        Checks if the parsing method is valid by verifying the presence of required headers.
+        Checks if the parsing method is valid by verifying the presence of required headers (case-insensitive).
 
         :param header_row: The first row of the table, which contains headers.
         :return: True if the method is valid, False otherwise.
         """
 
-        return self.__required_headers.issubset(set(header_row))
+        header_set = {header.strip().lower() for header in header_row if header}
+        required_set = {req_header.strip().lower() for req_header in self._required_headers}
+
+        return required_set.issubset(header_set)
 
     @staticmethod
     def _get_signature_index(header_row: list[str]) -> int | None:
@@ -88,7 +96,7 @@ class NewUIParser(PDFParser):
             return fixed if fixed else '-'
 
         # If first element is 'Ora' or the second element is empty, skip the row (repeating header or empty row)
-        if row[self.__Columns.HOUR.value] == 'Ora' or not row[self.__Columns.CLASSROOM.value]:
+        if row[self._Columns.HOUR.value].lower() == 'ora' or not row[self._Columns.CLASSROOM.value]:
             return None
 
         # Remove the 'Firma' element if it exists
@@ -97,24 +105,24 @@ class NewUIParser(PDFParser):
 
         # Convert hour to integer
         try:
-            hour = int(row[self.__Columns.HOUR.value])
+            hour = int(row[self._Columns.HOUR.value])
         except ValueError:
             return None
 
         # Fix teacher names
-        teacher = fix_teacher_name(row[self.__Columns.TEACHER.value])
-        substitute_1 = fix_teacher_name(row[self.__Columns.SUBSTITUTE_1.value])
-        substitute_2 = fix_teacher_name(row[self.__Columns.SUBSTITUTE_2.value])
+        teacher = fix_teacher_name(row[self._Columns.TEACHER.value])
+        substitute_1 = fix_teacher_name(row[self._Columns.SUBSTITUTE_1.value])
+        substitute_2 = fix_teacher_name(row[self._Columns.SUBSTITUTE_2.value] if getattr(self._Columns, 'SUBSTITUTE_2', None) else '-')
 
         # Fix notes
-        notes = row[self.__Columns.NOTES.value].replace('\n', ' ').strip()
+        notes = row[self._Columns.NOTES.value].replace('\n', ' ').strip()
         if not notes:
             notes = None
 
         return Variation(
             hour=hour,
-            class_name=row[self.__Columns.CLASS.value],
-            classroom=row[self.__Columns.CLASSROOM.value],
+            class_name=row[self._Columns.CLASS.value],
+            classroom=row[self._Columns.CLASSROOM.value],
             teacher=teacher,
             substitute_1=substitute_1,
             substitute_2=substitute_2,

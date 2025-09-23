@@ -96,7 +96,13 @@ class VariationsDB:
         for date, vars in variations.items():
             for var in vars:
                 await self.variations_collection.update_one(
-                    {'date': datetime(date.year, date.month, date.day), 'variations.hour': var.hour, 'variations.class': var.class_name, 'variations.teacher': var.teacher},
+                    {'date': datetime(date.year, date.month, date.day), 'variations': {
+                        '$elemMatch': {
+                            'hour': var.hour,
+                            'class': var.class_name,
+                            'teacher': var.teacher
+                        }
+                    }},
                     {'$set': {
                         'variations.$.classroom': var.classroom,
                         'variations.$.substitute_1': var.substitute_1,

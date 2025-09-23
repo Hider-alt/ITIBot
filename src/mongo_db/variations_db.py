@@ -21,18 +21,19 @@ class VariationsDB:
             await self.mongo_client['ITI'].create_collection(self.variations_collection.name)
 
     @staticmethod
-    def __classify_variations(variations: list[Variation]) -> tuple[list[Variation], list[Variation]]:
+    def __classify_variations(variations: list[Variation]) -> tuple[list[Variation], list[Variation], list[Variation]]:
         """
-        Classify the variations into new and deleted, using "type" field
+        Classify the variations into new, edited and deleted, using "type" field
 
         :param variations: The variations to classify
         :return: A tuple containing the new variations and the deleted variations
         """
 
         add = [var for var in variations if var.type == 'new']
+        edit = [var for var in variations if var.type == 'edited']
         delete = [var for var in variations if var.type == 'removed']
 
-        return add, delete
+        return add, edit, delete
 
     @staticmethod
     def __group_variations_by_date(variations: list[Variation]) -> dict[date, list[Variation]]:
@@ -61,12 +62,14 @@ class VariationsDB:
         :param variations: The variations to save/delete
         """
 
-        add, delete = self.__classify_variations(variations)
+        add, edit, delete = self.__classify_variations(variations)
 
         add_grouped = self.__group_variations_by_date(add)
+        edit_grouped = self.__group_variations_by_date(edit)
         delete_grouped = self.__group_variations_by_date(delete)
 
         await self.add_variations(add_grouped)
+        await self.edit_variations(edit_grouped)
         await self.delete_variations(delete_grouped)
 
     async def add_variations(self, variations: dict[date, list[Variation]]):
@@ -82,6 +85,25 @@ class VariationsDB:
                 {'$push': {'variations': {'$each': [var.to_dict() for var in daily_vars]}}},
                 upsert=True
             )
+
+    async def edit_variations(self, variations: dict[date, list[Variation]]):
+        """
+        Edit the variations in the database
+
+        :param variations: The variations to edit, grouped by date
+        """
+
+        for date, vars in variations.items():
+            for var in vars:
+                await self.variations_collection.update_one(
+                    {'date': datetime(date.year, date.month, date.day), 'variations.hour': var.hour, 'variations.class': var.class_name, 'variations.teacher': var.teacher},
+                    {'$set': {
+                        'variations.$.classroom': var.classroom,
+                        'variations.$.substitute_1': var.substitute_1,
+                        'variations.$.substitute_2': var.substitute_2,
+                        'variations.$.notes': var.notes
+                    }}
+                )
 
     async def delete_variations(self, variations: dict[date, list[Variation]]):
         """

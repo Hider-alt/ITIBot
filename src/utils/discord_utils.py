@@ -35,7 +35,6 @@ async def fetch_channel(guild, channel_name: str):
 
     print("Fetching channels")
     channels = await guild.fetch_channels()
-    print(channels)
     fetched_channels = channels
 
     return utils.get(channels, name=channel_name)

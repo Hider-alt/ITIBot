@@ -49,8 +49,8 @@ def create_new_embed(variation: Variation) -> Embed:
     description = f":teacher: **Docente assente: {variation.teacher}**\n" \
                   f"\t• **Ora:** {variation.hour}^\n" \
                   f"\t• **Aula:** {variation.classroom}\n" \
-                  f"\t• **Sostituto:** {variation.substitute_1}\n" \
-                  f"\t• **Note:** {variation.notes}\n" if variation.notes and variation.notes != '-' else ''
+                  f"\t• **Sostituto:** {variation.substitute_1}\n" + \
+                  (f"\t• **Note:** {variation.notes}\n" if variation.notes else '')
     embed = Embed(title=title, description=description, color=color)
 
     return embed

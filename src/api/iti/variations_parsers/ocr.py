@@ -1,3 +1,4 @@
+import gc
 from datetime import datetime
 from pathlib import Path
 
@@ -12,9 +13,24 @@ from src.utils.utils import to_thread
 
 
 class OCRParser(PDFParser):
+    _pipeline = None
+
     def __init__(self):
         super().__init__()
         self.__required_headers = {'Ora', 'Classe', 'Aula', 'Docente assente', 'Sostituto 1', 'Sostituto 2', 'Note'}
+
+    @staticmethod
+    def _get_pipeline():
+        if OCRParser._pipeline is None:
+            OCRParser._pipeline = TableRecognitionPipelineV2(
+                text_detection_model_name="PP-OCRv5_server_det",
+                text_recognition_model_name="PP-OCRv5_server_rec",
+                text_detection_model_dir="assets/ocr-models/det/",
+                text_recognition_model_dir="assets/ocr-models/rec/",
+                use_doc_orientation_classify=True,
+                use_doc_unwarping=False
+            )
+        return OCRParser._pipeline
 
     async def _try_all_rotation_parsing(self, pdf: bytes) -> list[Variation] | None:
         return await self._parse(pdf)
@@ -37,10 +53,11 @@ class OCRParser(PDFParser):
         variations = self.__parse_dataframe(df)
 
         clear_folder('assets/tmp-ocr')
+
+        gc.collect()
         return variations
 
-    @staticmethod
-    def _convert_pdf_to_xlsx(pdf_path: str) -> tuple[str, ...]:
+    def _convert_pdf_to_xlsx(self, pdf_path: str) -> tuple[str, ...]:
         """
         Converts a PDF file into one or more XLSX files using OCR.
 
@@ -54,17 +71,7 @@ class OCRParser(PDFParser):
             """
             return Path(path).stem
 
-        def get_pipeline():
-            return TableRecognitionPipelineV2(
-                text_detection_model_name="PP-OCRv5_server_det",
-                text_recognition_model_name="PP-OCRv5_server_rec",
-                text_detection_model_dir="assets/ocr-models/det/",
-                text_recognition_model_dir="assets/ocr-models/rec/",
-                use_doc_orientation_classify=True,
-                use_doc_unwarping=False
-            )
-
-        prediction = get_pipeline().predict(input=pdf_path)
+        prediction = self._get_pipeline().predict(input=pdf_path)
 
         xlsx_files = []
         for i, page in enumerate(prediction):

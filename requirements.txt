@@ -15,7 +15,7 @@ matplotlib
 
 PyPDF2==3.0.1
 pdfplumber==0.11.5
-paddlex @ git+https://github.com/PaddlePaddle/PaddleX.git@a8ec0bdec40d4108859ebda48e079d2fdcfb5b82
-paddlepaddle==3.1.0
-paddleocr==3.1.0
+paddlex==3.2.0
+paddlepaddle==3.2.0
+paddleocr==3.2.0
 pillow

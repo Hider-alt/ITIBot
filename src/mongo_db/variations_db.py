@@ -243,9 +243,11 @@ class VariationsDB:
         :return: The scoreboard for each professor
         """
 
+        # Filter out teachers with less than 3 characters in their name (usually errors)
         scoreboard = await self.variations_collection.aggregate([
             {'$unwind': '$variations'},
             {'$group': {'_id': '$variations.teacher', 'count': {'$sum': 1}}},
+            {'$match': {'$expr': {'$gt': [{'$strLenCP': '$_id'}, 2]}}},
             {'$sort': {'count': -1}}
         ]).to_list()
 

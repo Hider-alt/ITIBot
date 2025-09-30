@@ -28,8 +28,7 @@ def create_variations_embeds(*variations: Variation) -> list[Embed]:
 
         if embed and variation.ocr:
             embed.set_footer(
-                text="Variazione rilevata tramite OCR, potrebbe contenere errori, quindi [controlla manualmente]" + 
-                     "(https://www.ispascalcomandini.it/variazioni-orario-istituto-tecnico-tecnologico/2017/09/15/) per sicurezza!")
+                text="Variazione rilevata tramite OCR, potrebbe contenere errori, quindi controlla manualmente nel sito per sicurezza!")
 
         if embed:
             embeds.append(embed)

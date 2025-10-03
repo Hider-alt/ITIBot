@@ -102,7 +102,7 @@ class OldUIParser(PDFParser):
             """
             Fixes the teacher name by removing any suffix after a hyphen and replacing underscores with spaces.
             """
-            fixed = name.replace('_', ' ').strip()
+            fixed = name.replace('_', ' ').replace('.', '').replace("=", '').strip()
 
             return fixed if fixed else '-'
 

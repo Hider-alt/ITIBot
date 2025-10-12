@@ -115,7 +115,12 @@ class OCRParser(PDFParser):
         """
 
         def fix_teacher_name(name: str) -> str:
-            fixed = name.split('-')[0].replace('_', ' ').replace('.', '').replace("=", '').replace("…", '').strip()
+            fixed = (name.split('-')[0]
+                     .replace('_', ' ')
+                     .replace('一', '')
+                     .replace('.', '')
+                     .replace("=", '')
+                     .replace("…", '').strip())
 
             if name == 'nan':
                 return '-'

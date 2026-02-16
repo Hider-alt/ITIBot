@@ -13,8 +13,8 @@ from src.utils.datetime_utils import parse_italian_date
 
 
 class VariationsAPI(ITIAPI):
-    __VARIATIONS_PATH = "/variazioni-orario-istituto-tecnico-tecnologico/2017/09/15/"
-    __DIV_ID = 'post-612'
+    __VARIATIONS_PATH = "/pagine/variazioni-orario-istituto-tecnico-tecnologico-1"
+    __DIV_ID = 'maincontent'
 
     @staticmethod
     async def get_variations_links() -> list[str]:
@@ -29,14 +29,15 @@ class VariationsAPI(ITIAPI):
         soup = BeautifulSoup(iti_page, 'html.parser')
 
         # Get <a> elements of the page
-        a = soup.find(id=VariationsAPI.__DIV_ID).find_all("div", {"class": "entry-content"})[0].find_all('a')
+        a = soup.find(id=VariationsAPI.__DIV_ID).find_all('a')
 
         # Get PDF links from <a> elements
-        links = [link.get('href') for link in a]
+        links: list[str] = [link.get('href') for link in a]
 
         # Filter out links that do not match the conditions
         conditions = [
-            lambda link: link.startswith('https://www.ispascalcomandini.it/wp-content/uploads/'),
+            lambda link: link is not None,
+            lambda link: link.startswith('https://cspace.spaggiari.eu/pub/FOIP0004/'),
             lambda link: 'parte2' not in link,
             lambda link: 'aule' not in link
         ]

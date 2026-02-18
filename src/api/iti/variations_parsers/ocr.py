@@ -1,4 +1,5 @@
 import gc
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -22,14 +23,19 @@ class OCRParser(PDFParser):
     @staticmethod
     def _get_pipeline():
         if OCRParser._pipeline is None:
-            OCRParser._pipeline = TableRecognitionPipelineV2(
-                text_detection_model_name="PP-OCRv5_server_det",
-                text_recognition_model_name="PP-OCRv5_server_rec",
-                text_detection_model_dir="assets/ocr-models/det/",
-                text_recognition_model_dir="assets/ocr-models/rec/",
-                use_doc_orientation_classify=True,
-                use_doc_unwarping=False
-            )
+            try:
+                OCRParser._pipeline = TableRecognitionPipelineV2(
+                    text_detection_model_name="PP-OCRv5_server_det",
+                    text_recognition_model_name="PP-OCRv5_server_rec",
+                    text_detection_model_dir="assets/ocr-models/det/",
+                    text_recognition_model_dir="assets/ocr-models/rec/",
+                    use_doc_orientation_classify=True,
+                    use_doc_unwarping=False
+                )
+            except Exception as e:
+                print(f"Error initializing OCR pipeline: {e}")
+                traceback.print_exc()
+                raise e
         return OCRParser._pipeline
 
     async def _try_all_rotation_parsing(self, pdf: bytes) -> list[Variation] | None:

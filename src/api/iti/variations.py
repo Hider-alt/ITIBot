@@ -81,7 +81,7 @@ class VariationsAPI(ITIAPI):
         :return: The date in 'dd-mm-yyyy' format.
         """
         date = link.split('/')[-1][:-4].lower()
-        date = re.search(r'\d+-\w+', date).group(0)  # Extracts the date part
+        date = re.search(r'\d+\s+\w+', date).group(0)  # Extracts the date part
 
         return parse_italian_date(date)
 

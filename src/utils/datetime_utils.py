@@ -19,7 +19,7 @@ months = [
 
 def parse_italian_date(date: str) -> datetime:
     """
-    It parses a string with a date in italian with the format `[day]-[month]`
+    It parses a string with a date in italian with the format `[day] [month]`
 
     :param date: The string containing the date in italian
     :returns: The date in datetime format
@@ -28,7 +28,7 @@ def parse_italian_date(date: str) -> datetime:
     now = datetime.now()
 
     # Get day, month and year
-    day, month_str = date.split('-')
+    day, month_str = date.split(' ')
 
     # Get month
     try:

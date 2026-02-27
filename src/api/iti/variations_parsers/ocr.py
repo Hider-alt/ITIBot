@@ -27,8 +27,6 @@ class OCRParser(PDFParser):
                 OCRParser._pipeline = TableRecognitionPipelineV2(
                     text_detection_model_name="PP-OCRv5_server_det",
                     text_recognition_model_name="PP-OCRv5_server_rec",
-                    text_detection_model_dir="assets/ocr-models/det/",
-                    text_recognition_model_dir="assets/ocr-models/rec/",
                     use_doc_orientation_classify=True,
                     use_doc_unwarping=False
                 )
@@ -133,6 +131,25 @@ class OCRParser(PDFParser):
 
             return fixed if fixed else '-'
 
+        def fix_class_name(name: str) -> str:
+            """
+            Replace specific characters in the second position.
+            """
+
+            if len(name) < 2:
+                return name
+
+            replacements = {
+                '1': 'I'
+            }
+
+            chars = list(name)
+
+            if chars[1] in replacements:
+                chars[1] = replacements[1]
+
+            return ''.join(chars)
+
         variations = []
         for _, row in df.iterrows():
             try:
@@ -142,7 +159,7 @@ class OCRParser(PDFParser):
 
             variation = Variation(
                 hour=hour,
-                class_name=str(row['Classe']),
+                class_name=fix_class_name(str(row['Classe'])),
                 classroom=str(row['Aula']),
                 teacher=fix_teacher_name(str(row['Docente assente'])),
                 substitute_1=fix_teacher_name(str(row['Sostituto 1'])),

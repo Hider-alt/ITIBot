@@ -124,6 +124,7 @@ class OCRParser(PDFParser):
                      .replace('一', '')
                      .replace('.', '')
                      .replace("=", '')
+                     .replace('二', '')
                      .replace("…", '').strip())
 
             if name == 'nan':

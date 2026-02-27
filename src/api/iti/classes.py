@@ -40,7 +40,11 @@ class ClassesAPI(ITIAPI):
         :return: A string containing the link to the classes PDF file, or None if no link is found.
         """
 
-        iti_page = await ITIAPI._request(ClassesAPI.__CLASSES_PATH)
+        try:
+            iti_page = await ITIAPI._request(ClassesAPI.__CLASSES_PATH)
+        except Exception as e:
+            print(f"Error fetching ITI page: {e}")
+            return None
 
         soup = BeautifulSoup(iti_page, 'html.parser')
 

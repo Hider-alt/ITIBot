@@ -24,7 +24,11 @@ class VariationsAPI(ITIAPI):
         :return: A list of strings, each string is a link to a PDF file.
         """
 
-        iti_page = await ITIAPI._request(VariationsAPI.__VARIATIONS_PATH)
+        try:
+            iti_page = await ITIAPI._request(VariationsAPI.__VARIATIONS_PATH)
+        except Exception as e:
+            print(f"Error fetching ITI page: {e}")
+            return []
 
         soup = BeautifulSoup(iti_page, 'html.parser')
 

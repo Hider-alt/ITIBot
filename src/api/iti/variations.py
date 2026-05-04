@@ -35,8 +35,17 @@ class VariationsAPI(ITIAPI):
         # Get <a> elements of the page
         a = soup.find(id=VariationsAPI.__DIV_ID).find_all('a')
 
-        # Get PDF links from <a> elements
-        links: list[str] = [link.get('href') for link in a]
+        # Get PDF links from <a> elements; only include <a> tags that have visible text
+        links: list[str] = []
+        for link in a:
+            text = link.get_text(strip=True)
+            href = link.get('href')
+            if text and href:
+                # href can sometimes be a list (AttributeValueList); normalize to a single string
+                if isinstance(href, (list, tuple)):
+                    href = href[0] if href else None
+                if href:
+                    links.append(href)
 
         # Filter out links that do not match the conditions
         conditions = [
@@ -68,8 +77,11 @@ class VariationsAPI(ITIAPI):
                     continue
 
                 pdf_variations = await VariationsAPI.__parse_pdf(pdf)
-                VariationsAPI.__set_variations_date(pdf_variations, date)
+                if not pdf_variations:
+                    print(f"Failed to parse PDF from {link}")
+                    continue
 
+                VariationsAPI.__set_variations_date(pdf_variations, date)
                 variations.extend(pdf_variations)
             except Exception as e:
                 print(f"Error processing link {link}: {e}")

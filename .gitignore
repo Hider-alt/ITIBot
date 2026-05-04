@@ -159,4 +159,4 @@ examples/structure/
 assets/tmp-ocr/*
 assets/ocr-models/det/*.pdiparams
 assets/ocr-models/rec/*.pdiparams
-!/AGENTS.md
+AGENTS.md

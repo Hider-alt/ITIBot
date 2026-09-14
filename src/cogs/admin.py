@@ -42,13 +42,14 @@ class Admin(Cog):
         now = datetime.datetime.now()
 
         print(f"[{now}] Creating and setting up new classes for the new school year")
+        await itr.response.send_message(content=f"[{now}] Creating and setting up new classes for the new school year", ephemeral=True)
 
         # 1 - Upgrade roles
 
         current_roles = await upgrade_roles(self.bot)
         if current_roles is None:
-            print("Failed to get new year classes, retrying tomorrow")
-            await itr.response.send_message(content="Failed to get new year classes, retrying tomorrow", ephemeral=True)
+            print("Failed to get new year classes")
+            await itr.edit_original_response(content="Failed to get new year classes")
             return
 
         await notify_roles_upgrade(self.bot)
@@ -79,5 +80,5 @@ class Admin(Cog):
 
         await self.bot.upgrade_school_year()
 
-        await itr.response.send_message(content=f"[{now}] School year updated to {self.bot.school_year} successfully", ephemeral=True)
+        await itr.edit_original_response(content=f"[{now}] School year updated to {self.bot.school_year} successfully")
         print(f"[{now}] School year updated to {self.bot.school_year} successfully")

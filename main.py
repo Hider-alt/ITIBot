@@ -8,6 +8,7 @@ from discord import Intents, Object, LoginFailure, Activity, ActivityType, Guild
 from discord.ext.commands import Bot
 from dotenv import load_dotenv
 
+from src.api.iti._iti_ import ITIAPI
 from src.commands.analytics.analytics import AnalyticsView
 from src.commands.analytics.plots import generate_plots
 from src.loops.new_year.ui.select_class_view import SelectClassView
@@ -107,6 +108,10 @@ class ITIBot(Bot):
         await variations_db.create_collection()
 
         await generate_plots(self)
+
+    async def close(self):
+        await ITIAPI.close()
+        await super().close()
 
 
 async def main():

@@ -4,6 +4,7 @@ import os
 from asyncio import sleep
 
 import aiohttp
+from aiohttp import ClientSession
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class ITIAPI:
     )
 
     @classmethod
-    async def get_session(cls) -> aiohttp.ClientSession:
+    async def get_session(cls) -> ClientSession | None:
         if cls._session is None or cls._session.closed:
             cls._session = aiohttp.ClientSession(
                 cookie_jar=aiohttp.CookieJar(),
@@ -44,12 +45,11 @@ class ITIAPI:
 
         if not username or not password:
             raise RuntimeError(
-                "Credenziali ITI mancanti: imposta ITI_USERNAME e ITI_PASSWORD nelle variabili d'ambiente (.env)."
+                "Credentials not set"
             )
 
         session = await cls.get_session()
 
-        # 1. Autenticazione SSO Spaggiari
         login_url = f"{cls.BASE_URL}/auth-p7/app/default/AuthApi4.php?a=aLoginPwd"
         login_headers = {
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -72,19 +72,19 @@ class ITIAPI:
                     request_info=response.request_info,
                     history=response.history,
                     status=response.status,
-                    message=f"Errore HTTP durante il login su {login_url}: {response.reason}"
+                    message=f"Error during login {login_url}: {response.reason}"
                 )
 
             try:
                 res_json = await response.json(content_type=None)
             except Exception as e:
                 res_text = await response.text()
-                raise RuntimeError(f"Risposta non valida dal login ITI: {res_text[:200]}") from e
+                raise RuntimeError(f"Invalid response: {res_text[:200]}") from e
 
             auth_data = res_json.get("data", {}).get("auth", {})
             if not auth_data.get("loggedIn", False):
-                errors = auth_data.get("errors", ["Credenziali errate o login non riuscito"])
-                raise RuntimeError(f"Autenticazione ITI fallita: {errors}")
+                errors = auth_data.get("errors", ["Invalid credentials or login failed"])
+                raise RuntimeError(f"Auth error: {errors}")
 
         # 2. Sincronizzazione sessione nel portale scolastico (pvw2)
         auth_url = f"{cls.BASE_URL}/pvw2/app/default/auth.php"
@@ -97,7 +97,7 @@ class ITIAPI:
         }
         async with session.post(auth_url, data={"act": "checkUser"}, headers=auth_headers, ssl=False) as response:
             if response.status != 200:
-                logger.warning(f"auth.php checkUser ha restituito lo status {response.status}")
+                logger.warning(f"auth.php checkUser returned {response.status}")
 
         cls._logged_in = True
         return True
@@ -117,29 +117,27 @@ class ITIAPI:
         url = f"{cls.BASE_URL}{endpoint}" if endpoint.startswith("/") else endpoint
         session = await cls.get_session()
 
-        # Login iniziale se non ancora effettuato
         if not cls._logged_in:
             async with cls._lock:
                 if not cls._logged_in:
                     await cls._login()
 
         async with session.request(method, url, params=params, ssl=False) as response:
-            # Se la sessione è scaduta (401 Unauthorized o 403 Forbidden)
             if response.status in (401, 403):
                 if not _retried:
-                    logger.info(f"Ricevuto HTTP {response.status} da {url}. Tentativo di re-login...")
+                    logger.info(f"Received {response.status} from {url}. Attempting re-login...")
                     async with cls._lock:
                         cls._logged_in = False
                         await cls._login()
-                    # Riprova UNA SOLA volta con _retried=True
+
+                    # Retry
                     return await cls._request(endpoint, params=params, method=method, _retried=True)
                 else:
-                    # Abbiamo già riprovato: non continuare a spammare richieste
                     raise aiohttp.ClientResponseError(
                         request_info=response.request_info,
                         history=response.history,
                         status=response.status,
-                        message=f"Accesso negato ({response.status}) a {url} anche dopo re-login. Interruzione per evitare spam."
+                        message=f"Access denied ({response.status}) to {url} even after re-login. Stopping to avoid spam."
                     )
 
             if response.status < 200 or response.status >= 300:
